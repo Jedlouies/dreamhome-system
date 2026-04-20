@@ -1,0 +1,30 @@
+<?php
+
+namespace App\Http\Controllers\Auth;
+
+use App\Http\Controllers\Controller;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+
+class StaffLoginController extends Controller
+{
+    public function showLoginForm() {
+        return view('auth.staff-login');
+    }
+
+    public function login(Request $request) {
+        $credentials = $request->validate([
+            'email' => ['required', 'email'],
+            'passwrd' => ['required'],
+        ]);
+
+        if (Auth::guard('staff')->attempt($credentials)) {
+            $request->session()->regenerate();
+            return redirect()->intended('/staff/dashboard');
+        }
+
+        return back()->withErrors([
+            'email'=> 'The provided staff credentials do not match our records.',
+        ]);
+    }
+}
