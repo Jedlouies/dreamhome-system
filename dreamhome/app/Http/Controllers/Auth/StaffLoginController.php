@@ -27,4 +27,13 @@ class StaffLoginController extends Controller
             'email'=> 'The provided staff credentials do not match our records.',
         ]);
     }
+    public function logout(Request $request)
+        {
+            Auth::guard('staff')->logout();
+
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
+
+            return redirect('/staff/login');
+        }
 }
