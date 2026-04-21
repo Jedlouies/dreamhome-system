@@ -1,8 +1,12 @@
 <x-guest-layout>
-    <div class="min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 ">
-        <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-black shadow-md overflow-hidden sm:rounded-lg" style="background-color: white">
+    <div class="rounded min-h-screen flex flex-col sm:justify-center items-center pt-6 sm:pt-0 bg-white ">
+        <div class="w-full sm:max-w-md mt-6 px-6 py-4 bg-black  overflow-hidden sm:rounded-lg" style="background-color: white">
             
-            <h2 class="text-2xl font-bold text-center text-gray-700 mb-6">Staff Portal</h2>
+            <div class="flex justify-center mb-6">
+                <img src="{{ asset('storage/images/dreamhome-logo-colored.png') }}" 
+                     alt="Logo" 
+                     class="h-20 w-auto object-contain">
+            </div>
 
             @if (session('status'))
                 <div class="mb-4 font-medium text-sm text-green-600">
@@ -39,8 +43,7 @@
                 </div>
 
                 <div class="flex items-center justify-center mt-4">
-                    <button type="button" style="background-color: green" class="text-white bg-green-500 box-border border border-transparent hover:bg-success-strong focus:ring-4 focus:ring-success-medium shadow-xs font-medium leading-5 rounded-full text-sm px-4 py-2.5 focus:outline-none">Login</button>
-                </div>
+                    <button type="button" class="rounded text-white bg-gradient-to-r from-pink-700 via-pink-700 to-green-900 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 font-medium rounded-base text-sm px-4 py-2.5 text-center leading-5">Green</button>               </div>
                 
             </form>
         </div>
