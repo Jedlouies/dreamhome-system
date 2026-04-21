@@ -43,7 +43,8 @@
                 </div>
 
                 <div class="flex items-center justify-center mt-4">
-                    <button type="submit" class="rounded text-white bg-gradient-to-r from-pink-700 via-pink-700 to-green-900 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 font-medium rounded-base text-sm px-4 py-2.5 text-center leading-5">Green</button>               </div>
+                    <button type="submit" class="rounded text-white bg-gradient-to-r from-pink-700 via-pink-700 to-green-900 hover:bg-gradient-to-br focus:ring-4 focus:outline-none focus:ring-green-300 dark:focus:ring-green-800 font-medium rounded-base text-sm px-4 py-2.5 text-center leading-5">Login</button>               
+                </div>
                 
             </form>
         </div>
