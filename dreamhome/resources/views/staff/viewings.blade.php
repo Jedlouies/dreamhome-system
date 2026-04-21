@@ -57,51 +57,66 @@
                     </div>
                 </div>
 
-                <div class="w-700 lg:w-85">
-                    <div class="bg-white rounded-[2rem] p-8 shadow-sm border border-white sticky top-6">
-                        <div class="flex items-center justify-between mb-8">
-                            <div>
-                                <h2 class="text-xl font-black text-gray-800">Timeline</h2>
-                                <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Upcoming Viewings</p>
-                            </div>
-                        </div>
+            <div class="py-12 bg-[#F3F4F6] min-h-screen" x-data="{ selectedDate: 'April 07, 2026' }">
+                    <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+                        <div class="flex flex-col lg:flex-row gap-8 items-start">
+                            
+                            <div class="flex-1">
+                                </div>
 
-                        <div class="space-y-6">
-                            @foreach(['April 07, 2026', 'April 08, 2026', 'April 09, 2026'] as $date)
-                            <div class="relative">
-                                <button @click="selectedDate = (selectedDate === '{{ $date }}' ? null : '{{ $date }}')" 
-                                    class="flex items-center w-full transition-all group outline-none">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all mr-3"
-                                         :class="selectedDate === '{{ $date }}' ? 'bg-[#853953] text-white rotate-0' : 'bg-gray-100 text-gray-400 rotate-90'">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4"></path></svg>
+                            <aside class="w-full lg:w-80 flex-shrink-0">
+                                <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-white sticky top-6 flex flex-col min-h-[600px]">
+                                    
+                                    <div class="mb-8">
+                                        <h2 class="text-xl font-black text-gray-800 tracking-tighter">Timeline</h2>
+                                        <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Upcoming Viewings</p>
                                     </div>
-                                    <span class="text-sm font-bold transition-colors" :class="selectedDate === '{{ $date }}' ? 'text-gray-900' : 'text-gray-400'">{{ $date }}</span>
-                                </button>
 
-                                <div x-show="selectedDate === '{{ $date }}'" x-collapse x-cloak class="mt-4 ml-4 pl-7 border-l-2 border-pink-100 space-y-4">
-                                    <div class="relative">
-                                        <div class="absolute -left-[33px] top-1.5 w-2 h-2 rounded-full bg-[#853953] border-4 border-white ring-1 ring-pink-100"></div>
-                                        <p class="text-xs font-bold text-gray-800">Tierra Nava Standard</p>
-                                        <p class="text-[10px] text-gray-400 font-medium">10:00 AM - Staff: Jed</p>
+                                    <div class="flex-1 space-y-8">
+                                        @foreach(['April 07, 2026', 'April 08, 2026', 'April 09, 2026'] as $date)
+                                        <div class="relative">
+                                            <button @click="selectedDate = (selectedDate === '{{ $date }}' ? null : '{{ $date }}')" 
+                                                class="flex items-center w-full transition-all group outline-none">
+                                                <div class="w-7 h-7 rounded-full flex items-center justify-center transition-all mr-3 shadow-sm"
+                                                    :class="selectedDate === '{{ $date }}' ? 'bg-[#853953] text-white' : 'bg-gray-50 text-gray-400'">
+                                                    <svg class="w-3 h-3 transition-transform duration-300" :class="selectedDate === '{{ $date }}' ? 'rotate-0' : 'rotate-90'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"></path>
+                                                    </svg>
+                                                </div>
+                                                <span class="text-xs font-black transition-colors" :class="selectedDate === '{{ $date }}' ? 'text-gray-900' : 'text-gray-400'">{{ $date }}</span>
+                                            </button>
+
+                                            <div x-show="selectedDate === '{{ $date }}'" x-collapse x-cloak class="mt-4 ml-3.5 pl-6 border-l border-pink-100 space-y-5">
+                                                <div class="relative group/item cursor-pointer">
+                                                    <div class="absolute -left-[29px] top-1 w-1.5 h-1.5 rounded-full bg-[#853953] ring-4 ring-white"></div>
+                                                    <p class="text-[11px] font-black text-gray-800 group-hover:text-[#853953] transition-colors leading-none">Tierra Nava Standard</p>
+                                                    <p class="text-[9px] text-gray-400 font-bold mt-1">10:00 AM • Staff: Jed</p>
+                                                </div>
+                                                
+                                                <div class="relative group/item cursor-pointer">
+                                                    <div class="absolute -left-[29px] top-1 w-1.5 h-1.5 rounded-full bg-pink-200 ring-4 ring-white group-hover:bg-[#853953] transition-colors"></div>
+                                                    <p class="text-[11px] font-black text-gray-800 group-hover:text-[#853953] transition-colors leading-none">Bria Homes Europa</p>
+                                                    <p class="text-[9px] text-gray-400 font-bold mt-1">02:30 PM • Staff: Alice</p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        @endforeach
                                     </div>
-                                    <div class="relative">
-                                        <div class="absolute -left-[33px] top-1.5 w-2 h-2 rounded-full bg-pink-300 border-4 border-white ring-1 ring-pink-100"></div>
-                                        <p class="text-xs font-bold text-gray-800">Bria Homes Europa</p>
-                                        <p class="text-[10px] text-gray-400 font-medium">02:30 PM - Staff: Alice</p>
+
+                                    <div class="mt-10 pt-6 border-t border-gray-50">
+                                        <button class="w-full bg-[#853953] text-white py-4 rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-pink-100 hover:bg-pink-900 hover:shadow-pink-200 transition-all flex items-center justify-center gap-2">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
+                                            New Viewing
+                                        </button>
                                     </div>
                                 </div>
-                            </div>
-                            @endforeach
-                        </div>
+                            </aside>
 
-                        <button class="w-full mt-10 bg-[#853953] text-white py-4 rounded-2xl font-bold text-sm shadow-lg shadow-pink-100 hover:bg-pink-900 hover:shadow-pink-200 transition-all flex items-center justify-center gap-2">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"></path></svg>
-                            Add Viewing
-                        </button>
+                        </div>
                     </div>
                 </div>
 
-            </div>
-        </div>
-    </div>
+                        </div>
+                    </div>
+                </div>
 </x-app-layout>

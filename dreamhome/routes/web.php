@@ -3,9 +3,10 @@
 use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\StaffLoginController;
+use App\Http\Controllers\StaffProfileController;
 
 Route::get('/', function () {
-    return view('welcome');
+    return view('dashboard');
 });
 
 
@@ -47,9 +48,23 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/reports', function () {
         return view('staff.reports');
     })->name('staff.reports');
+    Route::get('/staff/profile', [StaffProfileController::class, 'edit'])->name('staff.profile.edit');
+    Route::patch('/staff/profile', [StaffProfileController::class, 'update'])->name('staff.profile.update');
 
     Route::post('/staff/logout', [StaffLoginController::class, 'logout'])->name('staff.logout');
 
+});
+
+Route::middleware('auth')->group(function () {
+    Route::get('/home', function () {
+        return view('home');
+    })->name('home');
+        Route::get('/leases', function () {
+        return view('leases');
+    })->name('leases');
+    Route::get('/viewings', function () {
+        return view('viewings');
+    })->name('viewings');
 });
 
 require __DIR__.'/auth.php';

@@ -1,7 +1,11 @@
 <x-app-layout>
-    <div class="py-12 bg-[#F3F4F6] min-h-screen" x-data="{ selectedDate: '2026-04-07' }">
+    <style>
+        [x-cloak] { display: none !important; }
+    </style>
+
+    <div class="py-12 bg-[#F3F4F6] min-h-screen" x-data="{ selectedDate: 'April 07, 2026' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
-            <div class="flex flex-col lg:flex-row gap-8">
+            <div class="flex flex-col lg:flex-row gap-8 items-start">
                 
                 <div class="flex-1">
                     <div class="flex flex-col md:flex-row md:items-center justify-between mb-8 gap-4">
@@ -13,25 +17,30 @@
                         <div class="flex items-center gap-3">
                             <div class="relative group">
                                 <span class="absolute inset-y-0 left-0 flex items-center pl-3">
-                                    <svg class="w-5 h-5 text-gray-400 group-focus-within:text-[#853953] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+                                    <svg class="w-5 h-5 text-gray-400 group-focus-within:text-[#853953] transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                                    </svg>
                                 </span>
                                 <input type="text" placeholder="Search Lease ID or Renter..." class="bg-white border-none rounded-2xl shadow-sm focus:ring-2 focus:ring-[#853953] pl-10 w-full md:w-72 text-sm transition-all">
                             </div>
                             <button class="bg-white p-2.5 rounded-2xl shadow-sm text-gray-600 hover:text-[#853953] hover:bg-pink-50 transition-all border border-transparent hover:border-pink-100">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path></svg>
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                                </svg>
                             </button>
                         </div>
                     </div>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                         @php
-                            $leases = [
+                            // Mock data for display - replace with $leases from your controller
+                            $mockLeases = [
                                 [
                                     'id' => 'LS23',
                                     'name' => 'Camara, Jed Louies O.',
                                     'renter_no' => 'CR78',
                                     'property' => 'Tierra Nava Standard Housing',
-                                    'address' => 'Barra, Opol, Misamis Oriental, Block 09, House No. 145',
+                                    'address' => 'Barra, Opol, Mis Or, Block 09, House No. 145',
                                     'rent' => '₱40,134.99',
                                     'start' => 'Jan 23, 2026',
                                     'end' => 'Apr 23, 2026'
@@ -49,7 +58,7 @@
                             ];
                         @endphp
 
-                        @foreach($leases as $lease)
+                        @foreach($mockLeases as $lease)
                         <div class="bg-white rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden group cursor-pointer border border-transparent hover:border-pink-50">
                             <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-4 flex justify-between items-center">
                                 <span class="text-white font-black text-2xl tracking-tighter">{{ $lease['id'] }}</span>
@@ -90,33 +99,41 @@
                     </div>
                 </div>
 
-                <div class="w-half lg:w-85">
-                    <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-white sticky top-6">
+                <aside class="w-full lg:w-80 flex-shrink-0">
+                    <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-white sticky top-6 flex flex-col min-h-[600px]">
                         
-                        <div class="mb-10">
-                            <h2 class="text-xl font-black text-gray-800 mb-1">Contract Alerts</h2>
+                        <div class="mb-10 px-2">
+                            <h2 class="text-xl font-black text-gray-800 tracking-tighter">Contract Alerts</h2>
                             <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Upcoming Expirations</p>
                         </div>
 
-                        <div class="space-y-6">
+                        <div class="flex-1 space-y-8 px-2">
                             @foreach(['April 07, 2026', 'April 08, 2026', 'April 09, 2026'] as $date)
                             <div class="relative">
                                 <button @click="selectedDate = (selectedDate === '{{ $date }}' ? null : '{{ $date }}')" 
                                     class="flex items-center w-full transition-all group outline-none">
-                                    <div class="w-8 h-8 rounded-full flex items-center justify-center transition-all mr-3"
+                                    <div class="w-7 h-7 rounded-full flex items-center justify-center transition-all mr-3 shadow-sm"
                                          :class="selectedDate === '{{ $date }}' ? 'bg-[#853953] text-white' : 'bg-gray-100 text-gray-400'">
-                                        <svg class="w-4 h-4 transition-transform duration-300" :class="selectedDate === '{{ $date }}' ? 'rotate-0' : 'rotate-90'" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M20 12H4"></path></svg>
+                                        <svg class="w-3 h-3 transition-transform duration-300" :class="selectedDate === '{{ $date }}' ? 'rotate-0' : 'rotate-90'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"></path>
+                                        </svg>
                                     </div>
-                                    <span class="text-sm font-bold transition-colors" :class="selectedDate === '{{ $date }}' ? 'text-gray-900' : 'text-gray-400'">{{ $date }}</span>
+                                    <span class="text-xs font-black transition-colors" :class="selectedDate === '{{ $date }}' ? 'text-gray-900' : 'text-gray-400'">{{ $date }}</span>
                                 </button>
 
-                                <div x-show="selectedDate === '{{ $date }}'" x-collapse x-cloak class="mt-4 ml-4 pl-7 border-l-2 border-pink-100 space-y-3">
+                                <div x-show="selectedDate === '{{ $date }}'" x-collapse x-cloak class="mt-4 ml-3.5 pl-6 border-l border-pink-100 space-y-5">
                                     @php $mockLeaseIds = ['LS752', 'LS0923', 'LS81']; @endphp
                                     @foreach($mockLeaseIds as $id)
-                                    <div class="relative flex items-center justify-between group/item cursor-pointer">
-                                        <div class="absolute -left-[33px] w-2 h-2 rounded-full bg-[#853953] border-4 border-white ring-1 ring-pink-100"></div>
-                                        <p class="text-xs font-black text-gray-700 group-hover/item:text-[#853953] transition-colors">{{ $id }}</p>
-                                        <svg class="w-3 h-3 text-gray-300 opacity-0 group-hover/item:opacity-100 transition-all" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path></svg>
+                                    <div class="relative group/item cursor-pointer">
+                                        <div class="absolute -left-[29px] top-1 w-1.5 h-1.5 rounded-full bg-[#853953] ring-4 ring-white group-hover:scale-125 transition-transform"></div>
+                                        
+                                        <div class="flex items-center justify-between">
+                                            <p class="text-[11px] font-black text-gray-700 group-hover:text-[#853953] transition-colors leading-none">{{ $id }}</p>
+                                            <svg class="w-3 h-3 text-gray-300 opacity-0 group-hover/item:opacity-100 transition-all translate-x-[-4px] group-hover/item:translate-x-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"></path>
+                                            </svg>
+                                        </div>
+                                        <p class="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-tighter">Expiring Soon</p>
                                     </div>
                                     @endforeach
                                 </div>
@@ -124,12 +141,16 @@
                             @endforeach
                         </div>
 
-                        <button class="w-full mt-12 bg-gray-900 text-white py-5 rounded-3xl font-black text-xs uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-[#853953] hover:shadow-pink-100 transition-all flex items-center justify-center gap-3">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
-                            Draft New Lease
-                        </button>
+                        <div class="mt-10 pt-6 border-t border-gray-50 px-2">
+                            <button class="w-full bg-[#853953] text-white py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-pink-900 hover:shadow-pink-100 transition-all flex items-center justify-center gap-3">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
+                                </svg>
+                                Draft Lease
+                            </button>
+                        </div>
                     </div>
-                </div>
+                </aside>
 
             </div>
         </div>

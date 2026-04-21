@@ -54,6 +54,12 @@
                     </x-slot>
 
                     <x-slot name="content">
+                        <x-dropdown-link :href="route('staff.profile.edit')">
+                            {{ __('Profile') }}
+                        </x-dropdown-link>
+
+                        <hr class="border-gray-100 my-1">
+
                         <form method="POST" action="{{ route('staff.logout') }}">
                             @csrf
                             <x-dropdown-link :href="route('staff.logout')"
