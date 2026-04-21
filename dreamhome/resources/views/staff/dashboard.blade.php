@@ -22,7 +22,7 @@
                                 </div>
                                 <div class="ml-4">
                                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Properties</p>
-                                    <h4 class="text-2xl font-black text-gray-900">24</h4>
+                                    <h4 class="text-2xl font-black text-gray-900">{{ $totalProperties }}</h4>                                
                                 </div>
                             </div>
                         </div>
@@ -33,7 +33,7 @@
                                 </div>
                                 <div class="ml-4">
                                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Renters</p>
-                                    <h4 class="text-2xl font-black text-gray-900">156</h4>
+                                    <h4 class="text-2xl font-black text-gray-900">{{ $totalRenters }}</h4>
                                 </div>
                             </div>
                         </div>
@@ -45,7 +45,7 @@
                                 </div>
                                 <div class="ml-4">
                                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Revenue</p>
-                                    <h4 class="text-2xl font-black text-gray-900">₱45k</h4>
+                                    <h4 class="text-2xl font-black text-gray-900">₱{{ number_format($totalRevenue / 1000, 1) }}k</h4>
                                 </div>
                             </div>
                         </div>
@@ -57,7 +57,8 @@
                                 </div>
                                 <div class="ml-4">
                                     <p class="text-[10px] font-black text-gray-400 uppercase tracking-widest">Pending</p>
-                                    <h4 class="text-2xl font-black text-gray-900">8</h4>
+                                    <h4 class="text-2xl font-black text-gray-900">{{ $pendingActions }}</h4>
+                                                                
                                 </div>
                             </div>
                         </div>

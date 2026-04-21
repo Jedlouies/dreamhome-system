@@ -4,6 +4,7 @@ use App\Http\Controllers\ProfileController;
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\StaffLoginController;
 use App\Http\Controllers\StaffProfileController;
+use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
     return view('dashboard');
@@ -13,9 +14,7 @@ Route::get('/', function () {
 Route::get('/staff/login', [StaffLoginController::class, 'showLoginForm'])->name('staff.login');
 Route::post('/staff/login', [StaffLoginController::class, 'login']);
 
-Route::get('/dashboard', function () {
-    return view('dashboard');
-})->middleware(['auth', 'verified'])->name('dashboard');
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -24,9 +23,7 @@ Route::middleware('auth')->group(function () {
 });
 
 Route::middleware('auth:staff')->group(function () {
-    Route::get('/staff/dashboard', function () {
-        return view('staff.dashboard');
-    })->name('staff.dashboard');
+    Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
     Route::get('/staff/staff-list', function () {
         return view('staff.staff');
     })->name('staff.staff');
@@ -50,6 +47,8 @@ Route::middleware('auth:staff')->group(function () {
     })->name('staff.reports');
     Route::get('/staff/profile', [StaffProfileController::class, 'edit'])->name('staff.profile.edit');
     Route::patch('/staff/profile', [StaffProfileController::class, 'update'])->name('staff.profile.update');
+    Route::get('/staff/create', [StaffProfileController::class, 'create'])->name('staff.create');
+    Route::post('/staff/store', [StaffProfileController::class, 'store'])->name('staff.store');
 
     Route::post('/staff/logout', [StaffLoginController::class, 'logout'])->name('staff.logout');
 
