@@ -98,7 +98,7 @@
                         </div>
 
                         <div class="mt-10 pt-6 border-t border-gray-50 px-2">
-                            <a href="{{ route('dashboard') }}" class="w-full bg-gray-900 text-white py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-[#853953] hover:shadow-pink-100 transition-all flex items-center justify-center gap-3">
+                            <a href="{{ route('home') }}" class="w-full bg-gray-900 text-white py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-[#853953] hover:shadow-pink-100 transition-all flex items-center justify-center gap-3">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path></svg>
                                 Schedule New
                             </a>

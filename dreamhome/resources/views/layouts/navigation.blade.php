@@ -3,7 +3,7 @@
         <div class="flex justify-between h-16">
             <div class="flex">
                 <div class="shrink-0 flex items-center">
-                    <a href="{{ route('dashboard') }}">
+                    <a href="{{ route('home') }}">
                         <img src="{{ asset('storage/images/dreamhome-logo-colored.png') }}" 
                              alt="Logo" 
                              class="h-10 w-auto object-contain">
@@ -12,7 +12,7 @@
 
                 @auth
                     <div class="hidden space-x-8 sm:-my-px sm:ms-10 sm:flex">
-                        <x-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                        <x-nav-link :href="route('home')" :active="request()->routeIs('home')">
                             {{ __('Home') }}
                         </x-nav-link>
                         <x-nav-link :href="route('leases')" :active="request()->routeIs('leases.*')">
@@ -75,13 +75,13 @@
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden">
         @auth
             <div class="pt-2 pb-3 space-y-1">
-                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('dashboard')">
+                <x-responsive-nav-link :href="route('home')" :active="request()->routeIs('home')">
                     {{ __('Home') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('leases.*')">
+                <x-responsive-nav-link :href="route('leases')" :active="request()->routeIs('leases.*')">
                     {{ __('Leases') }}
                 </x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('dashboard')" :active="request()->routeIs('viewings.*')">
+                <x-responsive-nav-link :href="route('viewings')" :active="request()->routeIs('viewings.*')">
                     {{ __('Viewings') }}
                 </x-responsive-nav-link>
             </div>
