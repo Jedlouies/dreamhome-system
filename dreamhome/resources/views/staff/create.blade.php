@@ -90,6 +90,18 @@
                                 <label class="block font-black text-[10px] uppercase tracking-widest text-gray-400 mb-2">NIN (National Insurance)</label>
                                 <input type="text" name="nin" required class="w-full bg-gray-50 border-none rounded-2xl py-4 px-5 text-sm font-bold focus:ring-[#853953]">
                             </div>
+                            <div>
+                                <label class="block font-black text-[10px] uppercase tracking-widest text-gray-400 mb-2">Telephone No.</label>
+                                <input type="text" name="telephoneno" required class="w-full bg-gray-50 border-none rounded-2xl py-4 px-5 text-sm font-bold focus:ring-[#853953]">
+                            </div>
+                            <div>
+                                <label class="block font-black text-[10px] uppercase tracking-widest text-gray-400 mb-2">Address</label>
+                                <input type="text" name="address" required class="w-full bg-gray-50 border-none rounded-2xl py-4 px-5 text-sm font-bold focus:ring-[#853953]">
+                            </div>
+                            <div>
+                                <label class="block font-black text-[10px] uppercase tracking-widest text-gray-400 mb-2">Salary</label>
+                                <input type="number" name="salary" required class="w-full bg-gray-50 border-none rounded-2xl py-4 px-5 text-sm font-bold focus:ring-[#853953]">
+                            </div>
                         </div>
                     </div>
 

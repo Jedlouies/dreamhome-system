@@ -8,15 +8,10 @@ use Illuminate\Support\Facades\DB;
 
 class StaffProfileController extends Controller
 {
-    /**
-     * Show the form for creating a new staff member.
-     */
     public function create()
     {
-        // 1. Fetch branches from the 'branch' table for the select dropdown
         $branches = DB::table('branch')->select('branchno', 'city')->get();
 
-        // 2. Auto-generate Staff Number starting with SL234
         $lastStaff = DB::table('staff')->latest('staffno')->first();
         $nextId = $lastStaff ? (int) filter_var($lastStaff->staffno, FILTER_SANITIZE_NUMBER_INT) + 1 : 1;
         $autoStaffNo = 'SL234' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
@@ -44,7 +39,7 @@ class StaffProfileController extends Controller
 
             $hashedPassword = bcrypt($request->password);
 
-            \DB::statement("CALL sp_AddStaff(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+            \DB::statement("CALL insert_staff_member(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
                 $request->staffno,
                 $request->firstname,
                 $request->lastname,

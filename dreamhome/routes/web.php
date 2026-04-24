@@ -7,7 +7,7 @@ use App\Http\Controllers\StaffProfileController;
 use App\Http\Controllers\DashboardController;
 
 Route::get('/', function () {
-    return view('dashboard');
+    return view('home');
 });
 
 
@@ -49,7 +49,6 @@ Route::middleware('auth:staff')->group(function () {
     Route::patch('/staff/profile', [StaffProfileController::class, 'update'])->name('staff.profile.update');
     Route::get('/staff/create', [StaffProfileController::class, 'create'])->name('staff.create');
     Route::post('/staff/store', [StaffProfileController::class, 'store'])->name('staff.store');
-
     Route::post('/staff/logout', [StaffLoginController::class, 'logout'])->name('staff.logout');
 
 });
