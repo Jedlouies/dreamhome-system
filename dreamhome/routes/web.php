@@ -24,9 +24,7 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
-    Route::get('/staff/staff-list', function () {
-        return view('staff.staff');
-    })->name('staff.staff');
+    Route::get('/staff/staff/list', [StaffProfileController::class, 'index'])->name('staff.staff');
     Route::get('/staff/properties', function () {
         return view('staff.properties');
     })->name('staff.properties');

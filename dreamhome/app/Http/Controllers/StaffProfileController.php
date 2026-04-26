@@ -7,7 +7,24 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 
 class StaffProfileController extends Controller
+
 {
+    public function index(Request $request)
+    {
+        $branches = DB::table('branch')->select('branchno', 'city')->get();
+
+        $selectedBranch = $request->input('branchno');
+
+        $staffs = DB::table(DB::raw("get_staff_by_branch(CAST(:branch AS TEXT)) as staff_data"))
+            ->setBindings([
+                'branch' => $selectedBranch ?: null 
+            ])
+            ->paginate(10)
+            ->withQueryString();
+
+        return view('staff.staff', compact('staffs', 'branches'));
+    }
+
     public function create()
     {
         $branches = DB::table('branch')->select('branchno', 'city')->get();
