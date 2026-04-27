@@ -26,7 +26,9 @@ Route::middleware('auth')->group(function () {
 Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
     Route::get('/staff/staff-list', [StaffProfileController::class, 'index'])->name('staff.staff');
-    Route::get('/staff/properties', [PropertiesController::class, 'index'])->name('staff.properties');
+    Route::get('/staff/properties', [PropertiesController::class, 'index'])->name('staff.properties.properties');
+    Route::get('/staff/properties/{id}', [PropertiesController::class, 'showProperty'])->name('staff.properties.show');
+    Route::get('/staff/properties/{id}/edit', [PropertiesController::class, 'edit'])->name('staff.properties.edit');
     Route::get('/staff/renters', function () {
         return view('staff.renters');
     })->name('staff.renters');
@@ -52,6 +54,7 @@ Route::middleware('auth:staff')->group(function () {
     Route::patch('/staff/staff-list/{id}', [StaffProfileController::class, 'update'])->name('staff.update');
 
 });
+
 
 Route::middleware('auth')->group(function () {
     Route::get('/home', function () {

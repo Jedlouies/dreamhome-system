@@ -29,6 +29,8 @@ class PropertiesController extends Controller
             ])
             ->paginate(10)
             ->withQueryString();
+
+         return view('staff.properties.properties', compact('properties', 'branches'));
     }
 
     /**
@@ -50,10 +52,24 @@ class PropertiesController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Properties $properties)
-    {
-        //
-    }
+    public function showProperty($id)
+        {
+            $property = DB::table(DB::raw("get_property_details(CAST(:id AS TEXT))"))
+                ->setBindings(['id' => $id])
+                ->first();
+
+            if (!$property) {
+                abort(404, 'Property not found.');
+            }
+
+            if (isset($property->angle_images)) {
+                $property->angle_images = str_getcsv(trim($property->angle_images, '{}'));
+            } else {
+                $property->angle_images = [];
+            }
+
+            return view('staff.properties.show', compact('property'));
+        }
 
     /**
      * Show the form for editing the specified resource.

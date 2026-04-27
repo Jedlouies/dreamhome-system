@@ -48,6 +48,11 @@ return [
             'provider' => 'staff_provider', 
         ],
 
+        'properties' => [
+            'driver' => 'session',
+            'provider' => 'properties_provider', 
+        ],
+
     ],
 
     /*
@@ -76,6 +81,11 @@ return [
          'staff_provider' => [
             'driver' => 'eloquent',
             'model' => App\Models\Staff::class,
+        ],
+
+        'properties_provider' => [
+            'driver' => 'eloquent',
+            'model' => App\Models\Property::class,
         ],
 
         // 'users' => [

@@ -11,7 +11,7 @@
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             
             <div class="bg-white p-4 rounded-xl shadow-sm border border-gray-200 mb-6">
-                <form action="{{ route('properties.properties') }}" method="GET" class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0">
+                <form action="{{ route('staff.properties.properties') }}" method="GET" class="flex flex-col md:flex-row items-center justify-between space-y-3 md:space-y-0">
                     
                     <div class="flex items-center space-x-4 w-full md:w-auto">
                         <div class="relative w-full md:w-64">
@@ -33,7 +33,7 @@
 
                     <button type="submit" class="hidden">Search</button>
 
-                    <a href="{{ route('properties.create') }}" class="flex items-center justify-center text-white bg-[#853953] hover:bg-pink-900 focus:ring-4 focus:ring-pink-300 font-medium rounded-lg text-sm px-5 py-2.5 transition-all">
+                    <a href="#" class="flex items-center justify-center text-white bg-[#853953] hover:bg-pink-900 focus:ring-4 focus:ring-pink-300 font-medium rounded-lg text-sm px-5 py-2.5 transition-all">
                         <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
                         </svg>
@@ -60,45 +60,37 @@
                             <td class="px-6 py-4 font-medium text-[#853953]">{{ $property->propertyno }}</td>
                             <td class="px-6 py-4">
                                 <div class="flex flex-col">
-                                    <span class="text-gray-900 font-semibold">{{ $property->address }}</span>
-                                    <span class="text-xs text-gray-400">{{ $property->city }}, {{ $property->province }}</span>
+                                    <span class="text-gray-900 font-semibold">{{ $property->street }}</span>
+                                    <span class="text-xs text-gray-400">{{ $property->city }}, {{ $property->area }}</span>
                                 </div>
                             </td>
                             <td class="px-6 py-4">
-                                <span class="bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-0.5 rounded-full border border-blue-100">
-                                    House
-                                </span>
+                                    <span class="bg-pink-50 text-[#853953] text-xs font-medium px-2.5 py-0.5 rounded-full border border-pink-100">
+                                        {{ $property->property_type }}
+                                    </span>
                             </td>
                             <td class="px-6 py-4 text-center">{{ $property->no_of_rooms }}</td>
                             <td class="px-6 py-4 font-semibold text-gray-900">₱{{ number_format($property->monthly_rate, 2) }}</td>
                             <td class="px-6 py-4 text-xs">{{ $property->staffno }}</td>
-                            <td class="px-6 py-4 text-right">
-                                <button id="propMenuButton" data-dropdown-toggle="propAction" class="text-gray-400 hover:text-gray-600">
-                                    <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
-                                </button>
-                                <div id="propAction" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 border border-gray-200">
-                                    <ul class="py-2 text-sm text-gray-700">
-                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">View Details</a></li>
-                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">Edit Property</a></li>
-                                        <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">Inspection History</a></li>
-                                    </ul>
-                                    <div class="py-1">
-                                        <a href="#" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Remove Listing</a>
+                                <td class="px-6 py-4 text-right">
+                                    <button id="dropdownMenuButton-{{ $property->propertyno }}" data-dropdown-toggle="dropdownAction-{{ $property->propertyno }}" class="text-gray-400 hover:text-gray-600">
+                                        <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 20 20"><path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z"></path></svg>
+                                    </button>
+                                    
+                                    <div id="dropdownAction-{{ $property->propertyno }}" class="z-10 hidden bg-white divide-y divide-gray-100 rounded-lg shadow w-44 border border-gray-200">
+                                        <ul class="py-2 text-sm text-gray-700 text-left">
+                                            <li><a href="{{ route('staff.properties.show', $property->propertyno) }}" class="block px-4 py-2 hover:bg-gray-100">View Details</a></li>
+                                            <li><a href="{{ route('staff.properties.edit', $property->propertyno) }}" class="block px-4 py-2 hover:bg-gray-100">Edit Property</a></li>
+                                        </ul>
                                     </div>
-                                </div>
-                            </td>
+                                </td>
                         </tr>
+                        @endforeach
                     </tbody>
                 </table>
 
-                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
-                    <span class="text-sm text-gray-700">
-                        Showing <span class="font-semibold">1</span> to <span class="font-semibold">10</span> of <span class="font-semibold">50</span> Properties
-                    </span>
-                    <div class="inline-flex mt-2 xs:mt-0">
-                        <button class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border border-gray-300 rounded-l-lg hover:bg-gray-100">Prev</button>
-                        <button class="px-4 py-2 text-sm font-medium text-gray-900 bg-white border-t border-b border-r border-gray-300 rounded-r-lg hover:bg-gray-100">Next</button>
-                    </div>
+                <div class="px-6 py-4 bg-gray-50 border-t border-gray-200">
+                    {{ $properties->links() }}
                 </div>
             </div>
         </div>

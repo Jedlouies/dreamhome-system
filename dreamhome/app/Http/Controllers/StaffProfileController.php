@@ -31,17 +31,17 @@ class StaffProfileController extends Controller
         }
 
     public function show($id)
-{
-    $staff = DB::table(DB::raw("get_staff_details(CAST(:id AS TEXT))"))
-        ->setBindings(['id' => $id])
-        ->first();
+        {
+            $staff = DB::table(DB::raw("get_staff_details(CAST(:id AS TEXT))"))
+                ->setBindings(['id' => $id])
+                ->first();
 
-    if (!$staff) {
-        abort(404, 'Staff member not found.');
-    }
+            if (!$staff) {
+                abort(404, 'Staff member not found.');
+            }
 
-    return view('staff.show', compact('staff'));
-}
+            return view('staff.show', compact('staff'));
+        }
 
 public function edit($id)
 {
