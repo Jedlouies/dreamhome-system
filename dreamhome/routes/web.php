@@ -5,6 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\StaffLoginController;
 use App\Http\Controllers\StaffProfileController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\PropertiesController;
 
 Route::get('/', function () {
     return view('home');
@@ -24,10 +25,8 @@ Route::middleware('auth')->group(function () {
 
 Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
-    Route::get('/staff/staff/list', [StaffProfileController::class, 'index'])->name('staff.staff');
-    Route::get('/staff/properties', function () {
-        return view('staff.properties');
-    })->name('staff.properties');
+    Route::get('/staff/staff-list', [StaffProfileController::class, 'index'])->name('staff.staff');
+    Route::get('/staff/properties', [PropertiesController::class, 'index'])->name('staff.properties');
     Route::get('/staff/renters', function () {
         return view('staff.renters');
     })->name('staff.renters');
@@ -48,6 +47,9 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/create', [StaffProfileController::class, 'create'])->name('staff.create');
     Route::post('/staff/store', [StaffProfileController::class, 'store'])->name('staff.store');
     Route::post('/staff/logout', [StaffLoginController::class, 'logout'])->name('staff.logout');
+    Route::get('/staff/staff-list/{id}', [StaffProfileController::class, 'show'])->name('staff.show');
+    Route::get('/staff/staff-list/{id}/edit', [StaffProfileController::class, 'edit'])->name('staff.edit');
+    Route::patch('/staff/staff-list/{id}', [StaffProfileController::class, 'update'])->name('staff.update');
 
 });
 
