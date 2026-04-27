@@ -20,7 +20,7 @@
                 <div class="lg:col-span-2">
                     <div class="bg-white p-3 rounded-3xl shadow-sm border border-gray-200 overflow-hidden">
                         @if($property->main_image)
-                            <img src="{{ asset('storage/images/' . $property->main_image) }}" 
+                            <img src="{{ asset('storage/' . $property->main_image) }}" 
                                  alt="Property Hero Image" 
                                  class="w-full h-[600px] object-cover rounded-2xl shadow-inner">
                         @else
