@@ -117,18 +117,64 @@ class PropertiesController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Properties $properties)
-    {
-        //
-    }
+    public function editProperty($id)
+        {
+            $property = DB::table('property')->where('propertyno', $id)->first();
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, Properties $properties)
-    {
-        //
-    }
+             if (!$property) {
+                 abort(404, 'Property not found.');
+             }
+
+             
+
+            $branches = DB::table('branch')->get();
+            $staffs = DB::table('staff')->get();
+            $owners = DB::table('property_owner')->get();
+
+            if (!$property) abort(404);
+
+            return view('staff.properties.edit', compact('property', 'branches', 'staffs', 'owners'));
+        }
+
+        public function update(Request $request, $id)
+        {
+            $request->validate([
+                'street'        => 'required|string',
+                'area'          => 'required|string',
+                'city'          => 'required|string',
+                'postcode'      => 'required|string', // Added
+                'property_type' => 'required|string',
+                'no_of_rooms'   => 'required|integer',
+                'monthly_rate'  => 'required|numeric',
+                'staffno'       => 'required|string', // Added
+                'ownerno'       => 'required|string', // Added
+                'branchno'      => 'required|string', // Added
+                'main_image'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            ]);
+
+            $imagePath = $request->old_image;
+
+            if ($request->hasFile('main_image')) {
+                $imagePath = $request->file('main_image')->store('images', 'public');
+            }
+
+            DB::statement("CALL update_property(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", [
+                $id,
+                $request->street,
+                $request->area,
+                $request->city,
+                $request->postcode,
+                $request->property_type,
+                (int)$request->no_of_rooms,
+                (float)$request->monthly_rate,
+                $request->staffno,
+                $request->ownerno,
+                $request->branchno,
+                $imagePath
+            ]);
+
+            return redirect()->route('staff.properties.properties')->with('success', 'Property updated!');
+        }
 
     /**
      * Remove the specified resource from storage.
