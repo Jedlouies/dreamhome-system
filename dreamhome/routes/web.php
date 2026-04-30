@@ -27,8 +27,11 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
     Route::get('/staff/staff-list', [StaffProfileController::class, 'index'])->name('staff.staff');
     Route::get('/staff/properties', [PropertiesController::class, 'index'])->name('staff.properties.properties');
+    Route::get('/staff/properties/create', [PropertiesController::class, 'create'])->name('staff.properties.create');
+    Route::post('/staff/properties/store', [PropertiesController::class, 'store'])->name('staff.properties.store');
     Route::get('/staff/properties/{id}', [PropertiesController::class, 'showProperty'])->name('staff.properties.show');
-    Route::get('/staff/properties/{id}/edit', [PropertiesController::class, 'edit'])->name('staff.properties.edit');
+    Route::get('/staff/properties/{id}/edit', [PropertiesController::class, 'editProperty'])->name('staff.properties.edit');
+    Route::patch('/staff/properties/{id}', [PropertiesController::class, 'update'])->name('staff.properties.update');    
     Route::get('/staff/renters', function () {
         return view('staff.renters');
     })->name('staff.renters');
