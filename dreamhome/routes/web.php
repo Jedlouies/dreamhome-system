@@ -7,6 +7,7 @@ use App\Http\Controllers\StaffProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PropertiesController;
 use App\Http\Controllers\RenterController;
+use App\Http\Controllers\ViewingsController;
 
 Route::get('/', function () {
     return view('home');
@@ -57,8 +58,11 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/renters/{id}/edit', [RenterController::class, 'edit'])->name('staff.renters.edit');
     Route::patch('/staff/renters/{id}', [RenterController::class, 'update'])->name('staff.renters.update');
     Route::get('/staff/renters/{id}/leases', [RenterController::class, 'history'])->name('staff.renters.leases');
-    Route::get('/staff/viewings', [App\Http\Controllers\ViewingsController::class, 'index'])->name('staff.viewings.index');
-});
+    Route::get('/staff/viewings', [ViewingsController::class, 'index'])->name('staff.viewings.index');
+    Route::get('/staff/viewings/create', [ViewingsController::class, 'create'])->name('staff.viewings.create');
+    Route::post('/staff/viewings/store', [ViewingsController::class, 'store'])->name('staff.viewings.store');
+    
+    });
 
 
 Route::middleware('auth')->group(function () {

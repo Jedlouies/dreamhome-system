@@ -32,4 +32,43 @@ class ViewingsController extends Controller
 
         return view('staff.viewings', compact('viewings', 'timeline'));
     }
+
+    // ViewingsController.php
+
+    public function create()
+        {
+        // Fetch active properties and renters for the form dropdowns[cite: 2, 9]
+        $properties = DB::table('property')->select('propertyno', 'street')->get();
+        $renters = DB::table('renter')->select('renterno', 'firstname', 'lastname')->get();
+
+        // Logic to auto-generate the next Viewing ID (e.g., V005)[cite: 2]
+        $lastViewing = DB::table('viewing')->latest('viewingid')->first();
+        $nextId = $lastViewing ? (int) filter_var($lastViewing->viewingid, FILTER_SANITIZE_NUMBER_INT) + 1 : 1;
+        $autoViewingId = 'V' . str_pad($nextId, 3, '0', STR_PAD_LEFT);
+
+        return view('staff.viewings.create', compact('properties', 'renters', 'autoViewingId'));
+    }
+
+    public function store(Request $request)
+    {
+        // Validate input to prevent database errors[cite: 2, 7]
+        $request->validate([
+            'viewingid'  => 'required|string|unique:viewing,viewingid',
+            'propertyno' => 'required|string|exists:property,propertyno',
+            'renterno'   => 'required|string|exists:renter,renterno',
+            'view_date'  => 'required|date',
+            'comment'    => 'nullable|string'
+        ]);
+
+        // Use the Stored Procedure for data insertion[cite: 1, 2]
+        DB::statement("CALL insert_viewing(?, ?, ?, ?, ?)", [
+            $request->viewingid,
+            $request->propertyno,
+            $request->renterno,
+            $request->view_date,
+            $request->comment
+        ]);
+
+        return redirect()->route('staff.viewings.index')->with('success', 'Viewing scheduled successfully!');
+    }
 }

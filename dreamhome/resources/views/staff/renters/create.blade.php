@@ -66,7 +66,6 @@
                         </div>
                     </div>
 
-                    <!-- Section 3: Staff Assignment -->
                     <div class="pt-6 border-t border-gray-50">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <div>
