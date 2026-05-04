@@ -31,72 +31,34 @@
                         </div>
                     </div>
 
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        @php
-                            // Mock data for display - replace with $leases from your controller
-                            $mockLeases = [
-                                [
-                                    'id' => 'LS23',
-                                    'name' => 'Camara, Jed Louies O.',
-                                    'renter_no' => 'CR78',
-                                    'property' => 'Tierra Nava Standard Housing',
-                                    'address' => 'Barra, Opol, Mis Or, Block 09, House No. 145',
-                                    'rent' => '₱40,134.99',
-                                    'start' => 'Jan 23, 2026',
-                                    'end' => 'Apr 23, 2026'
-                                ],
-                                [
-                                    'id' => 'LS912',
-                                    'name' => 'Chembee, Regaton O.',
-                                    'renter_no' => 'CR10',
-                                    'property' => 'Bria Homes Gran Europa',
-                                    'address' => 'Lumbia, CDO City, Mis Or, Block 12, House No. 034',
-                                    'rent' => '₱10,134.99',
-                                    'start' => 'Feb 10, 2026',
-                                    'end' => 'Dec 12, 2026'
-                                ]
-                            ];
-                        @endphp
-
-                        @foreach($mockLeases as $lease)
-                        <div class="bg-white rounded-[2rem] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 overflow-hidden group cursor-pointer border border-transparent hover:border-pink-50">
-                            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-4 flex justify-between items-center">
-                                <span class="text-white font-black text-2xl tracking-tighter">{{ $lease['id'] }}</span>
-                                <span class="bg-white/20 text-white text-[10px] px-3 py-1 rounded-full uppercase font-black tracking-widest backdrop-blur-sm">Active</span>
-                            </div>
-                            
-                            <div class="p-6">
-                                <div class="flex items-center gap-4 mb-6">
-                                    <img class="w-14 h-14 rounded-2xl shadow-inner border-2 border-gray-50 object-cover" src="https://ui-avatars.com/api/?name={{ urlencode($lease['name']) }}&background=853953&color=fff" alt="Renter">
-                                    <div>
-                                        <h3 class="text-base font-black text-gray-900 group-hover:text-[#853953] transition-colors">{{ $lease['name'] }}</h3>
-                                        <p class="text-xs font-bold text-gray-400">Renter No. {{ $lease['renter_no'] }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="space-y-1 mb-6">
-                                    <h4 class="text-sm font-black text-gray-800">{{ $lease['property'] }}</h4>
-                                    <p class="text-[11px] text-gray-500 font-medium leading-relaxed">{{ $lease['address'] }}</p>
-                                    <div class="pt-2">
-                                        <span class="text-lg font-black text-[#853953]">{{ $lease['rent'] }}</span>
-                                        <span class="text-[10px] font-bold text-gray-400 uppercase ml-1">/ Monthly</span>
-                                    </div>
-                                </div>
-
-                                <div class="grid grid-cols-2 gap-4 border-t border-gray-50 pt-4">
-                                    <div class="bg-gray-50 p-3 rounded-2xl">
-                                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-widest mb-1 text-center">Start Date</p>
-                                        <p class="text-xs font-black text-gray-700 text-center">{{ $lease['start'] }}</p>
-                                    </div>
-                                    <div class="bg-pink-50/50 p-3 rounded-2xl">
-                                        <p class="text-[8px] font-black text-[#853953]/60 uppercase tracking-widest mb-1 text-center">End Date</p>
-                                        <p class="text-xs font-black text-[#853953] text-center">{{ $lease['end'] }}</p>
-                                    </div>
-                                </div>
+                    @foreach($viewings as $viewing)
+                    <div class="bg-white rounded-3xl p-5 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-pink-50 flex flex-col md:flex-row items-center gap-6 group cursor-pointer">
+                        
+                        <div class="w-24 h-24 bg-gradient-to-br from-[#853953] to-[#5d273a] rounded-2xl flex-shrink-0 flex items-center justify-center text-white font-bold text-2xl shadow-inner">
+                            {{ substr($viewing->title, 0, 1) }}
+                        </div>
+                        
+                        <div class="flex-1 text-center md:text-left">
+                            <h3 class="text-xl font-bold text-gray-900 group-hover:text-[#853953] transition-colors">{{ $viewing->title }}</h3>
+                            <p class="text-sm text-gray-500 font-medium">{{ $viewing->addr }}</p>
+                            <div class="flex items-center justify-center md:justify-start gap-2 mt-2">
+                                <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2-2v12a2 2 0 002 2z"></path></svg>
+                                <p class="text-xs font-bold text-gray-400 uppercase tracking-widest">
+                                    {{ \Carbon\Carbon::parse($viewing->view_date)->format('F d, Y') }}
+                                </p>
                             </div>
                         </div>
-                        @endforeach
+
+                        <div class="hidden md:block w-px h-16 bg-gray-100"></div>
+
+                        <div class="flex-1 bg-gray-50 p-4 rounded-2xl border border-gray-100 group-hover:bg-pink-50 group-hover:border-pink-100 transition-colors">
+                            <p class="text-[10px] font-black text-[#853953] uppercase mb-1 tracking-tighter opacity-60">Staff Feedback</p>
+                            <p class="text-xs text-gray-600 italic leading-relaxed">
+                                {{ $viewing->comment ?: 'No feedback provided yet.' }}
+                            </p>
+                        </div>
                     </div>
+                    @endforeach                
                 </div>
 
                 <aside class="w-full lg:w-80 flex-shrink-0">

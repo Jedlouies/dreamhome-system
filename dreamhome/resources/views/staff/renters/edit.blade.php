@@ -55,7 +55,6 @@
                             </select>
                         </div>
 
-                        <!-- Preferences -->
                         <div class="space-y-2">
                             <label class="text-sm font-bold text-gray-700">Preferred Property Type</label>
                             <select name="preferred_property_type" class="w-full rounded-lg border-gray-300 focus:border-[#853953] focus:ring-[#853953]">
@@ -68,7 +67,6 @@
                             <input type="number" name="max_rent" value="{{ old('max_rent', $renter->max_rent) }}" class="w-full rounded-lg border-gray-300 focus:border-[#853953] focus:ring-[#853953]">
                         </div>
 
-                        <!-- Assignments -->
                         <div class="space-y-2">
                             <label class="text-sm font-bold text-gray-700">Branch</label>
                             <select name="branchno" class="w-full rounded-lg border-gray-300">

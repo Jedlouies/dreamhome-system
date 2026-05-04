@@ -33,9 +33,6 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/properties/{id}', [PropertiesController::class, 'showProperty'])->name('staff.properties.show');
     Route::get('/staff/properties/{id}/edit', [PropertiesController::class, 'editProperty'])->name('staff.properties.edit');
     Route::patch('/staff/properties/{id}', [PropertiesController::class, 'update'])->name('staff.properties.update');    
-    Route::get('/staff/viewings', function () {
-        return view('staff.viewings');
-    })->name('staff.viewings');
     Route::get('/staff/leases', function () {
         return view('staff.leases');
     })->name('staff.leases');
@@ -59,6 +56,8 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/renters/{id}', [RenterController::class, 'show'])->name('staff.renters.show');
     Route::get('/staff/renters/{id}/edit', [RenterController::class, 'edit'])->name('staff.renters.edit');
     Route::patch('/staff/renters/{id}', [RenterController::class, 'update'])->name('staff.renters.update');
+    Route::get('/staff/renters/{id}/leases', [RenterController::class, 'history'])->name('staff.renters.leases');
+    Route::get('/staff/viewings', [App\Http\Controllers\ViewingsController::class, 'index'])->name('staff.viewings.index');
 });
 
 

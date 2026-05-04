@@ -85,15 +85,8 @@
                                             <ul class="py-2 text-sm text-gray-700">
                                                 <li><a href="{{ route('staff.renters.show', $renter->renterno) }}" class="block px-4 py-2 hover:bg-gray-100">View Details</a></li>
                                                 <li><a href="{{ route('staff.renters.edit', $renter->renterno)  }}" class="block px-4 py-2 hover:bg-gray-100">Edit Renter</a></li>
-                                                <li><a href="#" class="block px-4 py-2 hover:bg-gray-100">Lease History</a></li>
+                                                <li><a href="{{ route('staff.renters.leases', $renter->renterno) }}" class="block px-4 py-2 hover:bg-gray-100">Lease History</a></li>
                                             </ul>
-                                            <div class="py-1">
-                                                <form action="" method="POST" onsubmit="return confirm('Delete this record?');">
-                                                    @csrf
-                                                    @method('DELETE')
-                                                    <button type="submit" class="block w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Delete Record</button>
-                                                </form>
-                                            </div>
                                         </div>
                                     </div>
                                 </td>

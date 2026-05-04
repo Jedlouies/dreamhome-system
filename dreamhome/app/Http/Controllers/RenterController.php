@@ -136,4 +136,19 @@ class RenterController extends Controller
 
             return redirect()->route('staff.renters.index')->with('success', 'Renter updated!');
         }
+        public function history($id)
+            {
+                $renter = DB::table('renter')->where('renterno', $id)->first();
+
+                if (!$renter) {
+                    abort(404, 'Renter not found.');
+                }
+
+                $leases = DB::table(DB::raw("get_lease_history(CAST(:id AS TEXT)) as lease_data"))
+                    ->setBindings(['id' => $id])
+                    ->get();
+
+                return view('staff.renters.leases', compact('renter', 'leases'));
+        }
+    
 }
