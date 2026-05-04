@@ -7,7 +7,7 @@
         "dev": "vite"
     },
     "devDependencies": {
-        "@tailwindcss/forms": "^0.5.2",
+        "@tailwindcss/forms": "^0.5.11",
         "@tailwindcss/vite": "^4.0.0",
         "alpinejs": "^3.4.2",
         "autoprefixer": "^10.5.0",
@@ -20,6 +20,7 @@
     },
     "dependencies": {
         "apexcharts": "^3.46.0",
-        "flowbite": "^4.0.1"
+        "flowbite": "^4.0.1",
+        "tailwinds": "^0.0.0"
     }
 }
