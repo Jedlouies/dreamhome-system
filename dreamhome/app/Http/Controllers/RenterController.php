@@ -130,8 +130,8 @@ class RenterController extends Controller
                 $request->preferred_property_type,
                 (float)$request->max_rent,
                 $request->comment,
-                $request->witness_staffno,
-                $request->branchno
+                $request->branchno,
+                $request->witness_staffno
             ]);
 
             return redirect()->route('staff.renters.index')->with('success', 'Renter updated!');
