@@ -1,5 +1,105 @@
 <x-app-layout>
 
+    {{-- ===== BOOK VIEWING MODAL ===== --}}
+    <div x-data="{ open: false, property: '', propertyId: '' }"
+         @open-viewing.window="open = true; property = $event.detail.name; propertyId = $event.detail.id"
+         x-cloak>
+
+        {{-- Backdrop --}}
+        <div x-show="open"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0"
+             x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100"
+             x-transition:leave-end="opacity-0"
+             @click="open = false"
+             class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40">
+        </div>
+
+        {{-- Modal Card --}}
+        <div x-show="open"
+             x-transition:enter="transition ease-out duration-200"
+             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
+             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+             x-transition:leave="transition ease-in duration-150"
+             x-transition:leave-start="opacity-100 scale-100"
+             x-transition:leave-end="opacity-0 scale-95"
+             class="fixed inset-0 z-50 flex items-center justify-center px-4">
+
+            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
+
+                {{-- Modal Header --}}
+                <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5 flex items-center justify-between">
+                    <div>
+                        <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Book a Viewing</p>
+                        <h3 class="text-white font-black text-lg tracking-tight leading-snug mt-0.5" x-text="property"></h3>
+                    </div>
+                    <button @click="open = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+
+                {{-- Modal Body --}}
+                <div class="p-6 space-y-4">
+
+                    {{-- Property ID (readonly) --}}
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Property ID</label>
+                        <input type="text" :value="propertyId" readonly
+                            class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-400 font-bold cursor-not-allowed">
+                    </div>
+
+                    {{-- Full Name --}}
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Full Name</label>
+                        <input type="text" placeholder="e.g. Juan Dela Cruz"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                    </div>
+
+                    {{-- Contact Number --}}
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Contact Number</label>
+                        <input type="tel" placeholder="e.g. 0912-345-6789"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                    </div>
+
+                    {{-- Preferred Date --}}
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Preferred Date</label>
+                        <input type="date"
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                    </div>
+
+                    {{-- Note --}}
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Note <span class="text-gray-300 normal-case font-medium">(optional)</span></label>
+                        <textarea rows="2" placeholder="Any special requests or questions..."
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
+                    </div>
+
+                </div>
+
+                {{-- Modal Footer --}}
+                <div class="px-6 pb-6 flex gap-3">
+                    <button @click="open = false"
+                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                        Cancel
+                    </button>
+                    <button
+                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
+                        Confirm Booking
+                    </button>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <style>[x-cloak] { display: none !important; }</style>
+
     {{-- ===== HERO SECTION ===== --}}
     <div class="bg-white border-b border-gray-100">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
@@ -24,11 +124,8 @@
 
                 {{-- Search --}}
                 <div class="relative flex-1 max-w-md">
-                    <input
-                        type="text"
-                        placeholder="Search by location..."
-                        class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all"
-                    >
+                    <input type="text" placeholder="Search by location..."
+                        class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
                     <svg class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
@@ -54,7 +151,7 @@
             {{-- ===== PROPERTY CARDS ===== --}}
             @php
                 $houses = [
-                    ['id' => 'P001', 'name' => 'Tierra Nava Modern',    'price' => '15,000', 'rooms' => 3, 'loc' => 'Barra, Opol',         'img' => 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'],
+                    ['id' => 'P001', 'name' => 'Tierra Nava Modern',     'price' => '15,000', 'rooms' => 3, 'loc' => 'Barra, Opol',         'img' => 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'],
                     ['id' => 'P002', 'name' => 'Bria Homes Gran Europa', 'price' => '12,500', 'rooms' => 2, 'loc' => 'Lumbia, CDO',          'img' => 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'],
                     ['id' => 'P003', 'name' => 'Valencia Estates',       'price' => '25,000', 'rooms' => 4, 'loc' => 'Uptown, CDO',          'img' => 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'],
                     ['id' => 'P004', 'name' => 'Xavier Estates Villa',   'price' => '45,000', 'rooms' => 5, 'loc' => 'Upper Balulang, CDO', 'img' => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'],
@@ -63,7 +160,7 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($houses as $house)
-                <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 cursor-pointer hover:-translate-y-1 border border-gray-100 hover:border-pink-100">
+                <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 hover:border-pink-100">
 
                     {{-- Image --}}
                     <div class="relative h-52 overflow-hidden">
@@ -111,8 +208,10 @@
                             </div>
                         </div>
 
-                        {{-- CTA Button --}}
-                        <button class="w-full py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm shadow-pink-100 group-hover:shadow-pink-200">
+                        {{-- CTA Button — dispatches event to open modal --}}
+                        <button
+                            @click="$dispatch('open-viewing', { name: '{{ $house['name'] }}', id: '{{ $house['id'] }}' })"
+                            class="w-full py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm shadow-pink-100 group-hover:shadow-pink-200">
                             Book Viewing
                         </button>
 
