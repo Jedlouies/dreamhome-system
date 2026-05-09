@@ -14,7 +14,25 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
+    <style>
+        #page-wipe {
+            position: fixed;
+            inset: 0;
+            background: #853953;
+            z-index: 9999;
+            transform: translateX(-100%);
+            transition: transform 0.45s cubic-bezier(0.77, 0, 0.175, 1);
+            pointer-events: none;
+        }
+        #page-wipe.wipe-in  { transform: translateX(0%); }
+        #page-wipe.wipe-out { transform: translateX(100%); transition: transform 0.45s cubic-bezier(0.77, 0, 0.175, 1); }
+    </style>
+
     <body class="font-sans antialiased">
+
+        {{-- Maroon wipe overlay --}}
+        <div id="page-wipe"></div>
+
         <div class="min-h-screen bg-[#F3F4F6]">
             @if(Auth::guard('staff')->check())
                 @include('layouts.staff-navigation')
@@ -36,5 +54,25 @@
                 {{ $slot }}
             </main>
         </div>
+
+        <script>
+            document.addEventListener('DOMContentLoaded', function () {
+                const wipe = document.getElementById('page-wipe');
+
+                // Intercept login & register link clicks
+                document.querySelectorAll('a[href*="/login"], a[href*="/register"]').forEach(function (link) {
+                    link.addEventListener('click', function (e) {
+                        e.preventDefault();
+                        const target = link.href;
+                        wipe.style.pointerEvents = 'all';
+                        wipe.classList.add('wipe-in');
+                        setTimeout(function () {
+                            window.location.href = target;
+                        }, 460);
+                    });
+                });
+            });
+        </script>
+
     </body>
 </html>
