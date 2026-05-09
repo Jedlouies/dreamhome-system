@@ -1,116 +1,173 @@
 <x-app-layout>
 
-    {{-- ===== BOOK VIEWING MODAL ===== --}}
-    <div x-data="{ open: false, property: '', propertyId: '' }"
-         @open-viewing.window="open = true; property = $event.detail.name; propertyId = $event.detail.id"
-         x-cloak>
+{{-- ===== BOOK VIEWING MODAL ===== --}}
+<div x-data="{ open: false, property: '', propertyId: '', propertyType: '' }">
 
-        {{-- Backdrop --}}
-        <div x-show="open"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0"
-             x-transition:enter-end="opacity-100"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100"
-             x-transition:leave-end="opacity-0"
-             @click="open = false"
-             class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40">
+    <style>[x-cloak] { display: none !important; }</style>
+
+    {{-- Backdrop --}}
+    <div x-show="open" x-cloak
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         @click="open = false"
+         class="fixed inset-0 bg-black/40 backdrop-blur-sm z-40"></div>
+
+    {{-- Modal --}}
+    <div x-show="open" x-cloak
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95 translate-y-4" x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100 scale-100" x-transition:leave-end="opacity-0 scale-95"
+         class="fixed inset-0 z-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
+
+            {{-- Modal Header --}}
+            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5 flex items-center justify-between">
+                <div>
+                    <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Book a Viewing</p>
+                    <h3 class="text-white font-black text-base tracking-tight mt-0.5" x-text="property"></h3>
+                </div>
+                <button @click="open = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                </button>
+            </div>
+
+            {{-- Modal Body --}}
+            <div class="p-6 space-y-4">
+
+                {{-- Property ID (auto-filled, readonly) --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Property No.</label>
+                    <input type="text" :value="propertyId" readonly
+                        class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-400 font-bold cursor-not-allowed">
+                </div>
+
+                {{-- Full Name (auto-filled from logged-in user) --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Full Name</label>
+                    <input type="text" value="{{ Auth::user()->name }}" readonly
+                        class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-500 font-bold cursor-not-allowed">
+                </div>
+
+                {{-- Contact Number --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Contact Number</label>
+                    <input type="tel" placeholder="e.g. 0912-345-6789"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                </div>
+
+                {{-- Preferred Property Type --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Preferred Property Type</label>
+                    <select class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                        <option value="">Select type...</option>
+                        <option value="Flat">Flat</option>
+                        <option value="House">House</option>
+                    </select>
+                </div>
+
+                {{-- Max Monthly Rent --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Maximum Monthly Rent (₱)</label>
+                    <input type="number" placeholder="e.g. 20000"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                </div>
+
+                {{-- Preferred Date --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Preferred Viewing Date</label>
+                    <input type="date"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                </div>
+
+                {{-- General Comments --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">General Comments <span class="text-gray-300 normal-case font-medium">(optional)</span></label>
+                    <textarea rows="2" placeholder="e.g. Currently renting, looking to move by August..."
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
+                </div>
+
+            </div>
+
+            {{-- Modal Footer --}}
+            <div class="px-6 pb-6 flex gap-3">
+                <button @click="open = false"
+                    class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                    Cancel
+                </button>
+                <button class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
+                    Confirm Viewing
+                </button>
+            </div>
+
         </div>
+    </div>
 
-        {{-- Modal Card --}}
-        <div x-show="open"
-             x-transition:enter="transition ease-out duration-200"
-             x-transition:enter-start="opacity-0 scale-95 translate-y-4"
-             x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-             x-transition:leave="transition ease-in duration-150"
-             x-transition:leave-start="opacity-100 scale-100"
-             x-transition:leave-end="opacity-0 scale-95"
-             class="fixed inset-0 z-50 flex items-center justify-center px-4">
-
-            <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
-
-                {{-- Modal Header --}}
-                <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5 flex items-center justify-between">
-                    <div>
-                        <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Book a Viewing</p>
-                        <h3 class="text-white font-black text-lg tracking-tight leading-snug mt-0.5" x-text="property"></h3>
-                    </div>
-                    <button @click="open = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
-                        </svg>
-                    </button>
+    {{-- ===== WELCOME HEADER ===== --}}
+    <div class="bg-gradient-to-r from-[#853953] to-[#5d273a]">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-pink-200 text-xs font-black uppercase tracking-[0.2em] mb-1">{{ now()->format('l, F j, Y') }}</p>
+                    <h1 class="text-3xl sm:text-4xl font-black text-white tracking-tight leading-tight">
+                        Welcome back, <span class="text-pink-200">{{ Auth::user()->name }}!</span>
+                    </h1>
+                    <p class="text-pink-100/70 text-sm font-medium mt-2">Here's what's available for you in Cagayan de Oro today.</p>
                 </div>
-
-                {{-- Modal Body --}}
-                <div class="p-6 space-y-4">
-
-                    {{-- Property ID (readonly) --}}
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Property ID</label>
-                        <input type="text" :value="propertyId" readonly
-                            class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-400 font-bold cursor-not-allowed">
-                    </div>
-
-                    {{-- Full Name --}}
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Full Name</label>
-                        <input type="text" placeholder="e.g. Juan Dela Cruz"
-                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
-                    </div>
-
-                    {{-- Contact Number --}}
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Contact Number</label>
-                        <input type="tel" placeholder="e.g. 0912-345-6789"
-                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
-                    </div>
-
-                    {{-- Preferred Date --}}
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Preferred Date</label>
-                        <input type="date"
-                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
-                    </div>
-
-                    {{-- Note --}}
-                    <div>
-                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Note <span class="text-gray-300 normal-case font-medium">(optional)</span></label>
-                        <textarea rows="2" placeholder="Any special requests or questions..."
-                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
-                    </div>
-
+                <div class="hidden sm:flex w-16 h-16 rounded-2xl bg-white/20 items-center justify-center text-white text-2xl font-black shadow-inner">
+                    {{ strtoupper(substr(Auth::user()->name, 0, 1)) }}
                 </div>
-
-                {{-- Modal Footer --}}
-                <div class="px-6 pb-6 flex gap-3">
-                    <button @click="open = false"
-                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
-                        Cancel
-                    </button>
-                    <button
-                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
-                        Confirm Booking
-                    </button>
-                </div>
-
             </div>
         </div>
     </div>
 
-    <style>[x-cloak] { display: none !important; }</style>
+    {{-- ===== STAT CARDS ===== --}}
+    <div class="bg-white border-b border-gray-100 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+            <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
 
-    {{-- ===== HERO SECTION ===== --}}
-    <div class="bg-white border-b border-gray-100">
-        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-14">
-            <div class="max-w-2xl">
-                <p class="text-xs font-black uppercase tracking-[0.2em] text-[#853953] mb-3">DreamHome Property Listings</p>
-                <h1 class="text-4xl sm:text-5xl font-black text-gray-900 leading-tight tracking-tight mb-4">
-                    Find Your <span class="text-[#853953]">Dream Home</span><br>in Cagayan de Oro
-                </h1>
-                <p class="text-base text-gray-500 font-medium leading-relaxed">
-                    Browse available houses, flats, and bungalows across CDO. Book a viewing directly and move in faster.
-                </p>
+                <div class="bg-[#F3F4F6] rounded-2xl p-5 flex items-center gap-4 border border-gray-100">
+                    <div class="w-11 h-11 rounded-xl bg-[#853953]/10 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Active Lease</p>
+                        <p class="text-2xl font-black text-gray-900 leading-none mt-1">1</p>
+                        <p class="text-[10px] text-emerald-500 font-bold mt-0.5">● Active</p>
+                    </div>
+                </div>
+
+                <div class="bg-[#F3F4F6] rounded-2xl p-5 flex items-center gap-4 border border-gray-100">
+                    <div class="w-11 h-11 rounded-xl bg-blue-50 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">My Viewings</p>
+                        <p class="text-2xl font-black text-gray-900 leading-none mt-1">2</p>
+                        <p class="text-[10px] text-blue-500 font-bold mt-0.5">● Scheduled</p>
+                    </div>
+                </div>
+
+                <div class="bg-[#F3F4F6] rounded-2xl p-5 flex items-center gap-4 border border-gray-100">
+                    <div class="w-11 h-11 rounded-xl bg-emerald-50 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Available</p>
+                        <p class="text-2xl font-black text-gray-900 leading-none mt-1">4</p>
+                        <p class="text-[10px] text-emerald-500 font-bold mt-0.5">● Properties</p>
+                    </div>
+                </div>
+
+                <div class="bg-[#F3F4F6] rounded-2xl p-5 flex items-center gap-4 border border-gray-100">
+                    <div class="w-11 h-11 rounded-xl bg-amber-50 flex items-center justify-center shrink-0">
+                        <svg class="w-5 h-5 text-amber-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                    </div>
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Inspections</p>
+                        <p class="text-2xl font-black text-gray-900 leading-none mt-1">3</p>
+                        <p class="text-[10px] text-amber-500 font-bold mt-0.5">● Last 6 months</p>
+                    </div>
+                </div>
+
             </div>
         </div>
     </div>
@@ -119,59 +176,175 @@
     <div class="py-10 bg-[#F3F4F6] min-h-screen">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- ===== SEARCH + FILTER ROW ===== --}}
-            <div class="mb-8 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
-
-                {{-- Search --}}
-                <div class="relative flex-1 max-w-md">
-                    <input type="text" placeholder="Search by location..."
-                        class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
-                    <svg class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
-                    </svg>
-                </div>
-
-                {{-- Filter Tabs --}}
-                <div class="flex gap-2">
-                    <button class="px-5 py-2.5 bg-[#853953] text-white rounded-xl text-sm font-bold shadow-sm transition-all hover:bg-[#6e2e44]">All Houses</button>
-                    <button class="px-5 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Flats</button>
-                    <button class="px-5 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Bungalows</button>
-                </div>
-            </div>
-
-            {{-- ===== SECTION LABEL ===== --}}
-            <div class="flex items-center justify-between mb-5">
-                <div>
-                    <h2 class="text-base font-black text-gray-800 tracking-tight">Available Properties</h2>
-                    <p class="text-xs text-gray-400 font-medium mt-0.5">4 properties found</p>
-                </div>
-                <span class="text-xs font-bold text-[#853953] bg-pink-50 px-3 py-1.5 rounded-lg">Sort: Newest</span>
-            </div>
-
-            {{-- ===== PROPERTY CARDS ===== --}}
+            {{-- Property Data — aligned with case study --}}
             @php
                 $houses = [
-                    ['id' => 'P001', 'name' => 'Tierra Nava Modern',     'price' => '15,000', 'rooms' => 3, 'loc' => 'Barra, Opol',         'img' => 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=800&q=80'],
-                    ['id' => 'P002', 'name' => 'Bria Homes Gran Europa', 'price' => '12,500', 'rooms' => 2, 'loc' => 'Lumbia, CDO',          'img' => 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80'],
-                    ['id' => 'P003', 'name' => 'Valencia Estates',       'price' => '25,000', 'rooms' => 4, 'loc' => 'Uptown, CDO',          'img' => 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80'],
-                    ['id' => 'P004', 'name' => 'Xavier Estates Villa',   'price' => '45,000', 'rooms' => 5, 'loc' => 'Upper Balulang, CDO', 'img' => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80'],
+                    [
+                        'id'       => 'PC001',
+                        'name'     => 'Tierra Nava Modern',
+                        'street'   => '12 Corrales Ave.',
+                        'area'     => 'Barra',
+                        'city'     => 'Cagayan de Oro City',
+                        'postcode' => '9000',
+                        'type'     => 'Flat',
+                        'rooms'    => 3,
+                        'price'    => '15,000',
+                        'img'      => 'https://images.unsplash.com/photo-1570129477492-45c003edd2be?auto=format&fit=crop&w=1200&q=80',
+                    ],
+                    [
+                        'id'       => 'PC002',
+                        'name'     => 'Bria Homes Gran Europa',
+                        'street'   => '45 Vamenta Blvd.',
+                        'area'     => 'Lumbia',
+                        'city'     => 'Cagayan de Oro City',
+                        'postcode' => '9003',
+                        'type'     => 'Flat',
+                        'rooms'    => 2,
+                        'price'    => '12,500',
+                        'img'      => 'https://images.unsplash.com/photo-1580587771525-78b9dba3b914?auto=format&fit=crop&w=800&q=80',
+                    ],
+                    [
+                        'id'       => 'PC003',
+                        'name'     => 'Valencia Estates',
+                        'street'   => '8 Divisoria St.',
+                        'area'     => 'Uptown',
+                        'city'     => 'Cagayan de Oro City',
+                        'postcode' => '9000',
+                        'type'     => 'House',
+                        'rooms'    => 4,
+                        'price'    => '25,000',
+                        'img'      => 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80',
+                    ],
+                    [
+                        'id'       => 'PC004',
+                        'name'     => 'Xavier Estates Villa',
+                        'street'   => '23 Upper Balulang Rd.',
+                        'area'     => 'Upper Balulang',
+                        'city'     => 'Cagayan de Oro City',
+                        'postcode' => '9000',
+                        'type'     => 'House',
+                        'rooms'    => 5,
+                        'price'    => '45,000',
+                        'img'      => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
+                    ],
                 ];
+                $featured = $houses[0];
+                $rest     = array_slice($houses, 1);
             @endphp
 
+            {{-- ===== FEATURED PROPERTY ===== --}}
+            <div class="mb-8">
+                <div class="flex items-center gap-2 mb-4">
+                    <span class="w-1 h-5 bg-[#853953] rounded-full inline-block"></span>
+                    <h2 class="text-sm font-black text-gray-800 uppercase tracking-widest">Featured Property</h2>
+                </div>
+
+                <div class="group bg-white rounded-3xl overflow-hidden shadow-sm hover:shadow-xl border border-gray-100 hover:border-pink-100 transition-all duration-300">
+                    <div class="flex flex-col lg:flex-row">
+
+                        {{-- Image --}}
+                        <div class="relative lg:w-1/2 h-72 lg:h-auto overflow-hidden">
+                            <img src="{{ $featured['img'] }}" alt="{{ $featured['street'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
+                            <div class="absolute top-4 left-4 flex gap-2">
+                                <span class="bg-[#853953] text-white text-[10px] font-black px-3 py-1.5 rounded-lg uppercase tracking-widest">Featured</span>
+                                <span class="bg-black/40 backdrop-blur-sm text-white text-[10px] font-black px-3 py-1.5 rounded-lg tracking-widest">{{ $featured['id'] }}</span>
+                            </div>
+                            <div class="absolute bottom-4 left-4">
+                                <span class="bg-emerald-500 text-white text-[10px] font-black px-3 py-1.5 rounded-lg flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 bg-white rounded-full animate-pulse"></span>
+                                    Available for Rent
+                                </span>
+                            </div>
+                        </div>
+
+                        {{-- Details --}}
+                        <div class="lg:w-1/2 p-8 flex flex-col justify-between">
+                            <div>
+                                {{-- Type + Price --}}
+                                <div class="flex items-start justify-between mb-4">
+                                    <span class="text-[10px] font-black uppercase tracking-widest text-[#853953] bg-pink-50 px-2.5 py-1 rounded-lg">{{ $featured['type'] }}</span>
+                                    <div class="text-right shrink-0 ml-4">
+                                        <p class="text-3xl font-black text-[#853953] leading-none">&#8369;{{ $featured['price'] }}</p>
+                                        <p class="text-xs text-gray-400 font-semibold">/ month</p>
+                                    </div>
+                                </div>
+
+                                {{-- Name + Address --}}
+                                <div class="mb-5">
+                                    <h3 class="text-xl font-black text-gray-900 tracking-tight leading-snug">{{ $featured['name'] }}</h3>
+                                    <p class="text-sm text-gray-500 font-bold mt-0.5">{{ $featured['street'] }}</p>
+                                    <p class="text-xs text-gray-400 font-bold mt-0.5">{{ $featured['area'] }}, {{ $featured['city'] }} {{ $featured['postcode'] }}</p>
+                                </div>
+
+                                {{-- Property Details Grid --}}
+                                <div class="grid grid-cols-3 gap-3 mb-5">
+                                    <div class="bg-pink-50 rounded-xl p-3 text-center">
+                                        <svg class="w-5 h-5 text-[#853953] mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+                                        <p class="text-xs font-black text-[#853953]">{{ $featured['rooms'] }} Rooms</p>
+                                    </div>
+                                    <div class="bg-blue-50 rounded-xl p-3 text-center">
+                                        <svg class="w-5 h-5 text-blue-500 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4"/></svg>
+                                        <p class="text-xs font-black text-blue-500">Furnished</p>
+                                    </div>
+                                    <div class="bg-emerald-50 rounded-xl p-3 text-center">
+                                        <svg class="w-5 h-5 text-emerald-500 mx-auto mb-1" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+                                        <p class="text-xs font-black text-emerald-500">Inspected</p>
+                                    </div>
+                                </div>
+
+                                {{-- Branch Info (added feature, case study has branch offices) --}}
+                                <div class="bg-gray-50 rounded-xl px-4 py-3 mb-5 flex items-center gap-3 border border-gray-100">
+                                    <svg class="w-4 h-4 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-2 5h2a2 2 0 002-2v-1a2 2 0 00-2-2h-2a2 2 0 00-2 2v1a2 2 0 002 2z"/></svg>
+                                    <div>
+                                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Managed by</p>
+                                        <p class="text-xs font-black text-gray-700">DreamHome CDO Branch — Branch No. B01</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button
+                                @click="property = '{{ $featured['street'] }}, {{ $featured['area'] }}'; propertyId = '{{ $featured['id'] }}'; propertyType = '{{ $featured['type'] }}'; open = true"
+                                class="w-full py-4 bg-[#853953] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-md shadow-pink-100 flex items-center justify-center gap-2">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
+                                Book a Viewing
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            {{-- ===== SEARCH + FILTER ===== --}}
+            <div class="mb-5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
+                <div class="relative flex-1 max-w-md">
+                    <input type="text" placeholder="Search by street, area or postcode..."
+                        class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                    <svg class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+                </div>
+                <div class="flex gap-2">
+                    <button class="px-5 py-2.5 bg-[#853953] text-white rounded-xl text-sm font-bold shadow-sm hover:bg-[#6e2e44] transition-all">All</button>
+                    <button class="px-5 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Flats</button>
+                    <button class="px-5 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Houses</button>
+                </div>
+            </div>
+
+            {{-- ===== MORE PROPERTIES ===== --}}
+            <div class="flex items-center gap-2 mb-4">
+                <span class="w-1 h-5 bg-[#853953] rounded-full inline-block"></span>
+                <h2 class="text-sm font-black text-gray-800 uppercase tracking-widest">More Properties</h2>
+                <span class="text-xs font-bold text-gray-400 ml-1">— {{ count($rest) }} available</span>
+            </div>
+
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                @foreach($houses as $house)
+                @foreach($rest as $house)
                 <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 hover:border-pink-100">
 
                     {{-- Image --}}
-                    <div class="relative h-52 overflow-hidden">
-                        <img src="{{ $house['img'] }}" alt="{{ $house['name'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
-
-                        {{-- Price badge --}}
+                    <div class="relative h-48 overflow-hidden">
+                        <img src="{{ $house['img'] }}" alt="{{ $house['street'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                         <div class="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm">
                             <p class="text-[#853953] font-black text-sm leading-none">&#8369;{{ $house['price'] }}<span class="text-[10px] text-gray-400 font-semibold">/mo</span></p>
                         </div>
-
-                        {{-- Property ID badge --}}
                         <div class="absolute top-3 left-3 bg-black/40 backdrop-blur-sm px-2.5 py-1 rounded-lg">
                             <span class="text-white text-[10px] font-black tracking-widest">{{ $house['id'] }}</span>
                         </div>
@@ -179,42 +352,34 @@
 
                     {{-- Card Body --}}
                     <div class="p-5">
-
-                        {{-- Title + Location --}}
-                        <div class="mb-4">
-                            <h3 class="text-base font-black text-gray-900 group-hover:text-[#853953] transition-colors tracking-tight leading-snug">{{ $house['name'] }}</h3>
-                            <div class="flex items-center gap-1 mt-1">
-                                <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/>
-                                </svg>
-                                <p class="text-xs font-bold text-gray-400 uppercase tracking-wider">{{ $house['loc'] }}</p>
+                        <div class="mb-3">
+                            <div class="flex items-start justify-between gap-2 mb-1">
+                                <h3 class="text-sm font-black text-gray-900 group-hover:text-[#853953] transition-colors tracking-tight leading-snug">{{ $house['name'] }}</h3>
+                                <span class="text-[10px] font-black text-[#853953] bg-pink-50 px-2 py-0.5 rounded-lg shrink-0">{{ $house['type'] }}</span>
+                            </div>
+                            <p class="text-xs text-gray-500 font-bold">{{ $house['street'] }}</p>
+                            <div class="flex items-center gap-1 mt-0.5">
+                                <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                <p class="text-xs text-gray-400 font-bold">{{ $house['area'] }}, {{ $house['city'] }} {{ $house['postcode'] }}</p>
                             </div>
                         </div>
 
-                        {{-- Amenity Pills --}}
                         <div class="flex items-center gap-2 mb-4">
                             <div class="flex items-center gap-1.5 bg-pink-50 text-[#853953] px-3 py-1.5 rounded-lg">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/>
-                                </svg>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                                 <span class="text-xs font-black">{{ $house['rooms'] }} Rooms</span>
                             </div>
                             <div class="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg">
-                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-                                </svg>
-                                <span class="text-xs font-black">Available Now</span>
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <span class="text-xs font-black">Available</span>
                             </div>
                         </div>
 
-                        {{-- CTA Button — dispatches event to open modal --}}
                         <button
-                            @click="$dispatch('open-viewing', { name: '{{ $house['name'] }}', id: '{{ $house['id'] }}' })"
-                            class="w-full py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm shadow-pink-100 group-hover:shadow-pink-200">
+                            @click="property = '{{ $house['street'] }}, {{ $house['area'] }}'; propertyId = '{{ $house['id'] }}'; propertyType = '{{ $house['type'] }}'; open = true"
+                            class="w-full py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
                             Book Viewing
                         </button>
-
                     </div>
                 </div>
                 @endforeach
@@ -223,4 +388,5 @@
         </div>
     </div>
 
+</div>{{-- end x-data --}}
 </x-app-layout>

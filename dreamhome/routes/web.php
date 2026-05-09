@@ -8,8 +8,11 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PropertiesController;
 
 Route::get('/', function () {
-    return view('home');
-});
+    if (Auth::check()) {
+        return redirect()->route('home');
+    }
+    return view('welcome');
+})->name('welcome');
 
 
 Route::get('/staff/login', [StaffLoginController::class, 'showLoginForm'])->name('staff.login');
