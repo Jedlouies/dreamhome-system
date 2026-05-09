@@ -6,8 +6,6 @@ use App\Http\Controllers\Auth\StaffLoginController;
 use App\Http\Controllers\StaffProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\PropertiesController;
-use App\Http\Controllers\RenterController;
-use App\Http\Controllers\ViewingsController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -15,6 +13,10 @@ Route::get('/', function () {
     }
     return view('welcome');
 })->name('welcome');
+
+Route::get('/landing', function () {
+    return redirect()->route('welcome');
+});
 
 
 Route::get('/staff/login', [StaffLoginController::class, 'showLoginForm'])->name('staff.login');
@@ -37,6 +39,12 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/properties/{id}', [PropertiesController::class, 'showProperty'])->name('staff.properties.show');
     Route::get('/staff/properties/{id}/edit', [PropertiesController::class, 'editProperty'])->name('staff.properties.edit');
     Route::patch('/staff/properties/{id}', [PropertiesController::class, 'update'])->name('staff.properties.update');    
+    Route::get('/staff/renters', function () {
+        return view('staff.renters');
+    })->name('staff.renters');
+    Route::get('/staff/viewings', function () {
+        return view('staff.viewings');
+    })->name('staff.viewings');
     Route::get('/staff/leases', function () {
         return view('staff.leases');
     })->name('staff.leases');
@@ -54,18 +62,8 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/staff-list/{id}', [StaffProfileController::class, 'show'])->name('staff.show');
     Route::get('/staff/staff-list/{id}/edit', [StaffProfileController::class, 'edit'])->name('staff.edit');
     Route::patch('/staff/staff-list/{id}', [StaffProfileController::class, 'update'])->name('staff.update');
-    Route::get('/staff/renters', [RenterController::class, 'index'])->name('staff.renters.index');
-    Route::get('/staff/renters/create', [RenterController::class, 'create'])->name('staff.renters.create');
-    Route::post('/staff/renters/store', [RenterController::class, 'store'])->name('staff.renters.store');
-    Route::get('/staff/renters/{id}', [RenterController::class, 'show'])->name('staff.renters.show');
-    Route::get('/staff/renters/{id}/edit', [RenterController::class, 'edit'])->name('staff.renters.edit');
-    Route::patch('/staff/renters/{id}', [RenterController::class, 'update'])->name('staff.renters.update');
-    Route::get('/staff/renters/{id}/leases', [RenterController::class, 'history'])->name('staff.renters.leases');
-    Route::get('/staff/viewings', [ViewingsController::class, 'index'])->name('staff.viewings.index');
-    Route::get('/staff/viewings/create', [ViewingsController::class, 'create'])->name('staff.viewings.create');
-    Route::post('/staff/viewings/store', [ViewingsController::class, 'store'])->name('staff.viewings.store');
-    
-    });
+
+});
 
 
 Route::middleware('auth')->group(function () {

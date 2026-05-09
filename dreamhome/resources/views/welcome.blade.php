@@ -13,6 +13,17 @@
                         Browse available houses and flats for rent across CDO. Create a free account to book a viewing and move in faster.
                     </p>
                 </div>
+                {{-- Guest CTAs --}}
+                <div class="flex items-center gap-3 shrink-0">
+                    <a href="{{ route('login') }}"
+                        class="px-6 py-3 border-2 border-[#853953] text-[#853953] rounded-xl text-sm font-black hover:bg-pink-50 transition-all">
+                        Login
+                    </a>
+                    <a href="{{ route('register') }}"
+                        class="px-6 py-3 bg-[#853953] text-white rounded-xl text-sm font-black hover:bg-[#6e2e44] transition-all shadow-sm">
+                        Create Account
+                    </a>
+                </div>
             </div>
         </div>
     </div>
@@ -46,11 +57,12 @@
                 <span class="text-xs font-bold text-[#853953] bg-pink-50 px-3 py-1.5 rounded-lg">Sort: Newest</span>
             </div>
 
-            {{-- PROPERTY DATA aligned to case study --}}
+            {{-- PROPERTY DATA --}}
             @php
                 $properties = [
                     [
                         'id'       => 'PC4',
+                        'name'     => 'Tierra Nava Modern',
                         'street'   => '6 Lawrence St.',
                         'area'     => 'Patag',
                         'city'     => 'Cagayan de Oro City',
@@ -62,6 +74,7 @@
                     ],
                     [
                         'id'       => 'PC36',
+                        'name'     => 'Bria Homes Gran Europa',
                         'street'   => '2 Manor Road',
                         'area'     => 'Carmen',
                         'city'     => 'Cagayan de Oro City',
@@ -73,6 +86,7 @@
                     ],
                     [
                         'id'       => 'PC21',
+                        'name'     => 'Valencia Estates',
                         'street'   => '18 Dale Road',
                         'area'     => 'Uptown',
                         'city'     => 'Cagayan de Oro City',
@@ -84,6 +98,7 @@
                     ],
                     [
                         'id'       => 'PC16',
+                        'name'     => 'Xavier Estates Villa',
                         'street'   => '5 Novar Drive',
                         'area'     => 'Balulang',
                         'city'     => 'Cagayan de Oro City',
@@ -103,7 +118,7 @@
 
                     {{-- Image --}}
                     <div class="relative h-52 overflow-hidden">
-                        <img src="{{ $property['img'] }}" alt="{{ $property['street'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
+                        <img src="{{ $property['img'] }}" alt="{{ $property['name'] }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
                         <div class="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-xl shadow-sm">
                             <p class="text-[#853953] font-black text-sm leading-none">&#8369;{{ $property['price'] }}<span class="text-[10px] text-gray-400 font-semibold">/mo</span></p>
                         </div>
@@ -115,16 +130,14 @@
 
                     {{-- Card Body --}}
                     <div class="p-5">
-                        {{-- Address --}}
                         <div class="mb-4">
-                            <h3 class="text-sm font-black text-gray-900 group-hover:text-[#853953] transition-colors tracking-tight">{{ $property['street'] }}</h3>
-                            <div class="flex items-center gap-1 mt-1">
+                            <h3 class="text-sm font-black text-gray-900 group-hover:text-[#853953] transition-colors tracking-tight">{{ $property['name'] }}</h3>
+                            <p class="text-xs text-gray-500 font-bold mt-0.5">{{ $property['street'] }}</p>
+                            <div class="flex items-center gap-1 mt-0.5">
                                 <svg class="w-3 h-3 text-gray-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                 <p class="text-xs font-bold text-gray-400">{{ $property['area'] }}, {{ $property['city'] }} {{ $property['postcode'] }}</p>
                             </div>
                         </div>
-
-                        {{-- Amenity Pills --}}
                         <div class="flex items-center gap-2 mb-4">
                             <div class="flex items-center gap-1.5 bg-pink-50 text-[#853953] px-3 py-1.5 rounded-lg">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
@@ -135,8 +148,6 @@
                                 <span class="text-xs font-black">Available</span>
                             </div>
                         </div>
-
-                        {{-- Login to Book CTA --}}
                         <a href="{{ route('login') }}"
                             class="block w-full py-3 bg-gray-800 text-white rounded-xl font-black text-xs uppercase tracking-widest text-center hover:bg-[#853953] active:scale-95 transition-all">
                             Login to Book

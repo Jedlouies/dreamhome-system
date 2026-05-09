@@ -4,7 +4,7 @@
 
             {{-- Logo --}}
             <div class="shrink-0 flex items-center">
-                <a href="{{ route('home') }}" class="flex items-center gap-2">
+                <a href="{{ Auth::check() ? route('home') : route('welcome') }}" class="flex items-center gap-2">
                     @php $logoPath = public_path('images/dreamhome-logo-colored.png'); @endphp
                     @if(file_exists($logoPath))
                         <img src="{{ asset('images/dreamhome-logo-colored.png') }}" alt="DreamHome Logo" class="h-10 w-auto object-contain">
@@ -48,8 +48,10 @@
                         </x-slot>
                     </x-dropdown>
                 @else
-                    <a href="{{ route('login') }}" class="text-sm font-semibold text-gray-500 hover:text-[#853953] transition-colors px-3 py-2">Login</a>
-                    <a href="{{ route('register') }}" class="px-5 py-2 bg-[#853953] text-white rounded-xl text-sm font-bold hover:bg-[#6e2e44] transition-all shadow-sm">Register</a>
+                    @if(!request()->routeIs('welcome'))
+                        <a href="{{ route('login') }}" class="text-sm font-semibold text-gray-500 hover:text-[#853953] transition-colors px-3 py-2">Login</a>
+                        <a href="{{ route('register') }}" class="px-5 py-2 bg-[#853953] text-white rounded-xl text-sm font-bold hover:bg-[#6e2e44] transition-all shadow-sm">Register</a>
+                    @endif
                 @endauth
             </div>
 
@@ -85,10 +87,12 @@
                 </div>
             </div>
         @else
-            <div class="pt-2 pb-3 space-y-1 px-4">
-                <x-responsive-nav-link :href="route('login')">Login</x-responsive-nav-link>
-                <x-responsive-nav-link :href="route('register')">Register</x-responsive-nav-link>
-            </div>
+            @if(!request()->routeIs('welcome'))
+                <div class="pt-2 pb-3 space-y-1 px-4">
+                    <x-responsive-nav-link :href="route('login')">Login</x-responsive-nav-link>
+                    <x-responsive-nav-link :href="route('register')">Register</x-responsive-nav-link>
+                </div>
+            @endif
         @endauth
     </div>
 </nav>
