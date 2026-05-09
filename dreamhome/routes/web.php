@@ -5,7 +5,7 @@ use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Auth\StaffLoginController;
 use App\Http\Controllers\StaffProfileController;
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\PropertiesController;
+use App\Http\Controllers\LeasesController;
 
 Route::get('/', function () {
     if (Auth::check()) {
@@ -66,9 +66,7 @@ Route::middleware('auth')->group(function () {
     Route::get('/home', function () {
         return view('home');
     })->name('home');
-        Route::get('/leases', function () {
-        return view('leases');
-    })->name('leases');
+    Route::get('/leases', [LeasesController::class, 'index'])->name('leases');
     Route::get('/viewings', function () {
         return view('viewings');
     })->name('viewings');
