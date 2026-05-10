@@ -6,12 +6,25 @@ use App\Http\Controllers\Auth\StaffLoginController;
 use App\Http\Controllers\StaffProfileController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\LeasesController;
+use App\Models\Properties;
+use Illuminate\Http\Request;
 
-Route::get('/', function () {
+Route::get('/', function (Request $request) {
     if (Auth::check()) {
         return redirect()->route('home');
     }
-    return view('welcome');
+    $query = Properties::query();
+    if ($request->has('category')) {
+        $validCategories = ['Flat', 'House'];
+
+        if (in_array($request->category, $validCategories)) {
+            // Filter using your specific database column
+            $query->where('property_type', $request->category);
+        }
+    }
+    $properties = $query->get();
+
+    return view('welcome', compact('properties'));
 })->name('welcome');
 
 Route::get('/landing', function () {

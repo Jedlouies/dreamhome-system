@@ -42,10 +42,24 @@
                     </svg>
                 </div>
                 <div class="flex gap-2">
-                    <button class="px-5 py-2.5 bg-[#853953] text-white rounded-xl text-sm font-bold shadow-sm hover:bg-[#6e2e44] transition-all">All</button>
-                    <button class="px-5 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Flats</button>
-                    <button class="px-5 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Houses</button>
-                </div>
+    {{-- All Button --}}
+    <a href="{{ route('welcome') }}"
+    class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all {{ !request('category') ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50' }}">
+        All
+    </a>
+
+    {{-- Flats Button --}}
+    <a href="{{ route('welcome', ['category' => 'Flat']) }}"
+    class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all {{ request('category') == 'Flat' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50' }}">
+        Flats
+    </a>
+
+    {{-- Houses Button --}}
+    <a href="{{ route('welcome', ['category' => 'House']) }}"
+    class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all {{ request('category') == 'House' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50' }}">
+        Houses
+    </a>
+</div>
             </div>
 
             {{-- SECTION LABEL --}}
@@ -59,7 +73,7 @@
 
             {{-- PROPERTY DATA --}}
             @php
-                $properties = [
+                $allProperties = collect([
                     [
                         'id'       => 'PC4',
                         'name'     => 'Tierra Nava Modern',
@@ -108,10 +122,14 @@
                         'price'    => '18,000',
                         'img'      => 'https://images.unsplash.com/photo-1600585154340-be6161a56a0c?auto=format&fit=crop&w=800&q=80',
                     ],
-                ];
+                ]);
+                $properties = request()->has('category')
+                ? $allProperties->where('type', request('category'))
+                : $allProperties;
             @endphp
 
             {{-- PROPERTY CARDS --}}
+            
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($properties as $property)
                 <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 hover:border-pink-100">
@@ -158,6 +176,7 @@
             </div>
 
             {{-- GUEST BANNER --}}
+            
             <div class="mt-10 bg-gradient-to-r from-[#853953] to-[#5d273a] rounded-2xl p-8 flex flex-col sm:flex-row items-center justify-between gap-5">
                 <div>
                     <h3 class="text-white font-black text-xl tracking-tight mb-1">Ready to find your dream home?</h3>
