@@ -20,10 +20,10 @@
                     <x-nav-link :href="route('staff.properties.properties')" :active="request()->routeIs('staff.properties.properties')">
                         {{ __('Properties') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('staff.renters.index')" :active="request()->routeIs('staff.renters')">
+                    <x-nav-link :href="route('staff.renters.index')" :active="request()->routeIs('staff.renters.index')">
                         {{ __('Renters') }}
                     </x-nav-link>
-                    <x-nav-link :href="route('staff.viewings.index')" :active="request()->routeIs('staff.viewings.index')">
+                    <x-nav-link :href="route('staff.viewings')" :active="request()->routeIs('staff.viewings')">
                         {{ __('Viewings') }}
                     </x-nav-link>
                     <x-nav-link :href="route('staff.leases')" :active="request()->routeIs('staff.leases')">
