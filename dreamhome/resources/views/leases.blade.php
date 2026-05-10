@@ -58,7 +58,7 @@
                                     <span class="bg-white/20 backdrop-blur-sm text-white text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-white/30">
                                         ● Active
                                     </span>
-                                    <span class="text-pink-200/60 text-[10px] font-bold uppercase tracking-widest">{{ $lease->duration }} contract</span>
+                                    <span class="text-pink-200/60 text-[10px] font-bold uppercase tracking-widest">{{ $lease->duration }} {{ $lease->duration == 1 ? 'month' : 'months' }} contract</span>
                                 </div>
                             </div>
                         </div>
@@ -117,7 +117,7 @@
 
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Lease Duration</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease->duration }}</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->duration }} {{ $lease->duration == 1 ? 'month' : 'months' }}</p>
                                         <p class="text-[10px] text-gray-400 font-bold mt-0.5">Min 3 months · Max 1 year</p>
                                     </div>
 
