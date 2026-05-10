@@ -2,10 +2,6 @@
     <div class="py-12 bg-[#F3F4F6] min-h-screen">
         <div class="max-w-4xl mx-auto sm:px-6 lg:px-8">
             <div class="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 class="text-3xl font-black text-gray-900 tracking-tight">Edit Property</h1>
-                    <p class="text-sm text-gray-500 mt-1 font-medium">Updating details for Property ID: <span class="text-[#853953]">{{ $property->propertyno }}</span></p>
-                </div>
                 <a href="{{ route('staff.properties.properties') }}" class="text-xs font-bold uppercase tracking-widest text-gray-400 hover:text-[#853953]">Cancel</a>
             </div>
 
@@ -120,7 +116,7 @@
                     </div>
 
                     <button type="submit" class="w-full bg-gray-900 text-white py-5 rounded-[2rem] font-black text-xs uppercase tracking-[0.2em] shadow-xl hover:bg-[#853953] transition-all">
-                        Update Listing
+                        Update
                     </button>
                 </form>
             </div>

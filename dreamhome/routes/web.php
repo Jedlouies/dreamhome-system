@@ -14,6 +14,10 @@ Route::get('/', function () {
     return view('welcome');
 })->name('welcome');
 
+Route::get('/landing', function () {
+    return redirect()->route('welcome');
+});
+
 
 Route::get('/staff/login', [StaffLoginController::class, 'showLoginForm'])->name('staff.login');
 Route::post('/staff/login', [StaffLoginController::class, 'login']);
