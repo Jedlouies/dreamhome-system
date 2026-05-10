@@ -283,6 +283,21 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
+                                <div x-show="selectedSection === 'upcoming'" x-cloak>
+                                    <div class="bg-pink-50 border border-pink-100 rounded-xl p-4">
+                                        <div class="flex items-start gap-3">
+                                            <div class="w-2 h-2 rounded-full bg-[#853953] mt-1.5 shrink-0 animate-pulse"></div>
+                                            <div>
+                                                <p class="text-xs font-black text-gray-900">
+                                                    {{ \Carbon\Carbon::parse($lease->startdate)->addMonth()->format('M d, Y') }}
+                                                </p>
+                                                <p class="text-[10px] font-black text-[#853953] mt-0.5">&#8369;{{ number_format($lease->monthly_rent, 2) }}</p>
+                                                <p class="text-[10px] text-gray-400 font-bold mt-1">Via {{ $lease->paymentmethod }}</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
 
                                 <div x-show="selectedSection === 'upcoming'" x-collapse x-cloak>
                                     <div class="bg-pink-50 border border-pink-100 rounded-xl p-4">
@@ -355,6 +370,8 @@
                 </aside>
 
             </div>
+            @endif
+
         </div>
     </div>
 
