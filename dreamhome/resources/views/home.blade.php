@@ -1,7 +1,20 @@
 <x-app-layout>
 
-{{-- ===== BOOK VIEWING MODAL ===== --}}
-<div x-data="{ open: false, property: '', propertyId: '', propertyType: '' }">
+{{-- ===== 2-STEP BOOK VIEWING MODAL ===== --}}
+<div x-data="{
+    open: false,
+    step: 1,
+    property: '',
+    propertyId: '',
+    propertyType: '',
+    openModal(name, id, type) {
+        this.property = name;
+        this.propertyId = id;
+        this.propertyType = type;
+        this.step = 1;
+        this.open = true;
+    }
+}">
 
     <style>[x-cloak] { display: none !important; }</style>
 
@@ -20,41 +33,71 @@
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden" @click.stop>
 
             {{-- Modal Header --}}
-            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5 flex items-center justify-between">
-                <div>
-                    <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Book a Viewing</p>
-                    <h3 class="text-white font-black text-base tracking-tight mt-0.5" x-text="property"></h3>
+            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Book a Viewing</p>
+                        <h3 class="text-white font-black text-base tracking-tight mt-0.5" x-text="property"></h3>
+                        <p class="text-pink-200/70 text-[11px] font-bold mt-0.5" x-text="propertyId"></p>
+                    </div>
+                    <button @click="open = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
-                <button @click="open = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+
+                {{-- Step indicator --}}
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all"
+                             :class="step >= 1 ? 'bg-white text-[#853953]' : 'bg-white/20 text-white'">1</div>
+                        <span class="text-[10px] font-black text-white/80 uppercase tracking-wider">Your Info</span>
+                    </div>
+                    <div class="flex-1 h-px bg-white/20 mx-1"></div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all"
+                             :class="step >= 2 ? 'bg-white text-[#853953]' : 'bg-white/20 text-white'">2</div>
+                        <span class="text-[10px] font-black text-white/80 uppercase tracking-wider">Preferences</span>
+                    </div>
+                </div>
             </div>
 
-            {{-- Modal Body --}}
-            <div class="p-6 space-y-4">
+            {{-- ===== STEP 1: Basic Info ===== --}}
+            <div x-show="step === 1" class="p-6 space-y-4">
 
-                {{-- Property ID (auto-filled, readonly) --}}
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Property No.</label>
-                    <input type="text" :value="propertyId" readonly
-                        class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-400 font-bold cursor-not-allowed">
-                </div>
-
-                {{-- Full Name (auto-filled from logged-in user) --}}
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Full Name</label>
                     <input type="text" value="{{ Auth::user()->name }}" readonly
                         class="w-full bg-gray-50 border border-gray-100 rounded-xl px-4 py-2.5 text-sm text-gray-500 font-bold cursor-not-allowed">
                 </div>
 
-                {{-- Contact Number --}}
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Contact Number</label>
                     <input type="tel" placeholder="e.g. 0912-345-6789"
                         class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
                 </div>
 
-                {{-- Preferred Property Type --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">General Comments <span class="text-gray-300 normal-case font-medium">(optional)</span></label>
+                    <textarea rows="3" placeholder="e.g. Currently renting, looking to move by August..."
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
+                </div>
+
+                <div class="flex gap-3 pt-1">
+                    <button @click="open = false"
+                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                        Cancel
+                    </button>
+                    <button @click="step = 2"
+                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm flex items-center justify-center gap-2">
+                        Next
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            {{-- ===== STEP 2: Preferences & Date ===== --}}
+            <div x-show="step === 2" class="p-6 space-y-4">
+
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Preferred Property Type</label>
                     <select class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
@@ -64,38 +107,29 @@
                     </select>
                 </div>
 
-                {{-- Max Monthly Rent --}}
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Maximum Monthly Rent (₱)</label>
                     <input type="number" placeholder="e.g. 20000"
                         class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
                 </div>
 
-                {{-- Preferred Date --}}
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Preferred Viewing Date</label>
                     <input type="date"
                         class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
                 </div>
 
-                {{-- General Comments --}}
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">General Comments <span class="text-gray-300 normal-case font-medium">(optional)</span></label>
-                    <textarea rows="2" placeholder="e.g. Currently renting, looking to move by August..."
-                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
+                <div class="flex gap-3 pt-1">
+                    <button @click="step = 1"
+                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                        Back
+                    </button>
+                    <button
+                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
+                        Confirm Viewing
+                    </button>
                 </div>
-
-            </div>
-
-            {{-- Modal Footer --}}
-            <div class="px-6 pb-6 flex gap-3">
-                <button @click="open = false"
-                    class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
-                    Cancel
-                </button>
-                <button class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
-                    Confirm Viewing
-                </button>
             </div>
 
         </div>
@@ -304,7 +338,7 @@
                             </div>
 
                             <button
-                                @click="property = '{{ $featured['street'] }}, {{ $featured['area'] }}'; propertyId = '{{ $featured['id'] }}'; propertyType = '{{ $featured['type'] }}'; open = true"
+                                @click="openModal('{{ $featured['name'] }}', '{{ $featured['id'] }}', '{{ $featured['type'] }}')"
                                 class="w-full py-4 bg-[#853953] text-white rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-md shadow-pink-100 flex items-center justify-center gap-2">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/></svg>
                                 Book a Viewing
@@ -376,7 +410,7 @@
                         </div>
 
                         <button
-                            @click="property = '{{ $house['street'] }}, {{ $house['area'] }}'; propertyId = '{{ $house['id'] }}'; propertyType = '{{ $house['type'] }}'; open = true"
+                            @click="openModal('{{ $house['name'] }}', '{{ $house['id'] }}', '{{ $house['type'] }}')"
                             class="w-full py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
                             Book Viewing
                         </button>
