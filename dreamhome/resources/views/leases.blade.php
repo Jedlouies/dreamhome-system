@@ -4,50 +4,39 @@
     <div class="py-10 bg-[#F3F4F6] min-h-screen" x-data="{ selectedSection: 'upcoming' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
-            {{-- ===== PAGE HEADER ===== --}}
+            {{-- PAGE HEADER --}}
             <div class="mb-8">
                 <p class="text-xs font-black uppercase tracking-[0.2em] text-[#853953] mb-1">DreamHome — CDO Branch</p>
-                <h1 class="text-3xl font-black text-gray-900 tracking-tight">My Lease Agreements</h1>
-                <p class="text-sm text-gray-400 font-medium mt-1">Your active and past rental contracts with DreamHome.</p>
+                <h1 class="text-3xl font-black text-gray-900 tracking-tight">My Lease Agreement</h1>
+                <p class="text-sm text-gray-400 font-medium mt-1">Your active rental contract with DreamHome.</p>
             </div>
 
+            @if(!$lease)
+            {{-- EMPTY STATE --}}
+            <div class="bg-white rounded-2xl p-16 text-center border-2 border-dashed border-gray-200">
+                <div class="w-16 h-16 bg-pink-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-8 h-8 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <p class="text-gray-800 font-black text-lg">No Active Lease</p>
+                <p class="text-gray-400 font-medium text-sm mt-1">
+                    @if(!Auth::user()->renterno)
+                        Your account is not yet linked to a renter record. Please contact DreamHome staff.
+                    @else
+                        You don't have any lease agreements yet.
+                    @endif
+                </p>
+                <a href="{{ route('home') }}" class="inline-block mt-5 px-5 py-2.5 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] transition-all">
+                    Browse Properties
+                </a>
+            </div>
+
+            @else
             <div class="flex flex-col lg:flex-row gap-6 items-start">
 
-                {{-- ===== MAIN LEASE DOCUMENT AREA ===== --}}
-                <div class="flex-1 space-y-6">
-
-                    @php
-                        $myLeases = [
-                            [
-                                // Case study required fields
-                                'lease_no'        => 'LS23',
-                                'monthly_rent'    => '40,134.99',
-                                'payment_method'  => 'Bank Transfer',
-                                'deposit'         => '80,269.98',
-                                'deposit_paid'    => true,
-                                'start'           => 'January 23, 2026',
-                                'end'             => 'April 23, 2026',
-                                'duration'        => '3 months',
-                                'staff_name'      => 'Ann Beech',
-                                'staff_no'        => 'SL21',
-                                'status'          => 'Active',
-                                // Added features
-                                'property_no'     => 'PC001',
-                                'property_name'   => 'Tierra Nava Modern',
-                                'street'          => '6 Lawrence St.',
-                                'area'            => 'Patag',
-                                'city'            => 'Cagayan de Oro City',
-                                'postcode'        => '9000',
-                                'type'            => 'Flat',
-                                'rooms'           => 3,
-                                'progress'        => 60,
-                            ],
-                        ];
-                    @endphp
-
-                    @forelse($myLeases as $lease)
-
-                    {{-- ===== LEASE CONTRACT DOCUMENT ===== --}}
+                {{-- MAIN LEASE DOCUMENT --}}
+                <div class="flex-1">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
 
                         {{-- Document Header --}}
@@ -55,27 +44,28 @@
                             <div class="flex items-start justify-between">
                                 <div class="flex items-center gap-4">
                                     <div class="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
-                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                                        </svg>
                                     </div>
                                     <div>
                                         <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Lease Agreement</p>
-                                        <h2 class="text-2xl font-black text-white tracking-tight leading-none mt-0.5">No. {{ $lease['lease_no'] }}</h2>
-                                        <p class="text-pink-200/70 text-xs font-bold mt-1">DreamHome CDO Branch — B01</p>
+                                        <h2 class="text-2xl font-black text-white tracking-tight leading-none mt-0.5">No. {{ $lease->leaseno }}</h2>
+                                        <p class="text-pink-200/70 text-xs font-bold mt-1">DreamHome CDO Branch — B001</p>
                                     </div>
                                 </div>
                                 <div class="flex flex-col items-end gap-2">
                                     <span class="bg-white/20 backdrop-blur-sm text-white text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-white/30">
-                                        ● {{ $lease['status'] }}
+                                        ● Active
                                     </span>
-                                    <span class="text-pink-200/60 text-[10px] font-bold uppercase tracking-widest">{{ $lease['duration'] }} contract</span>
+                                    <span class="text-pink-200/60 text-[10px] font-bold uppercase tracking-widest">{{ $lease->duration }} contract</span>
                                 </div>
                             </div>
                         </div>
 
-                        {{-- Document Body --}}
                         <div class="p-8">
 
-                            {{-- Section 1: Property Details --}}
+                            {{-- SECTION 1: Property Details --}}
                             <div class="mb-7">
                                 <div class="flex items-center gap-2 mb-4">
                                     <span class="w-1 h-4 bg-[#853953] rounded-full"></span>
@@ -84,31 +74,30 @@
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Property No.</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease['property_no'] }}</p>
-                                    </div>
-                                    <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
-                                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Property Name</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease['property_name'] }}</p>
-                                    </div>
-                                    <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100 sm:col-span-2">
-                                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Full Address</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease['street'] }}, {{ $lease['area'] }}, {{ $lease['city'] }} {{ $lease['postcode'] }}</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->propertyno }}</p>
                                     </div>
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Type</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease['type'] }}</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->property_type }}</p>
+                                    </div>
+                                    <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100 sm:col-span-2">
+                                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Full Address</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->street }}, {{ $lease->area }}, {{ $lease->city }} {{ $lease->postcode }}</p>
                                     </div>
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">No. of Rooms</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease['rooms'] }} Rooms</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->no_of_rooms }} Rooms</p>
+                                    </div>
+                                    <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
+                                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Renter Name</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->renter_name }}</p>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Divider --}}
                             <div class="border-t border-dashed border-gray-200 mb-7"></div>
 
-                            {{-- Section 2: Lease Terms (case study fields) --}}
+                            {{-- SECTION 2: Lease Terms (all case study fields) --}}
                             <div class="mb-7">
                                 <div class="flex items-center gap-2 mb-4">
                                     <span class="w-1 h-4 bg-[#853953] rounded-full"></span>
@@ -118,28 +107,28 @@
 
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Monthly Rent</p>
-                                        <p class="text-lg font-black text-[#853953]">&#8369;{{ $lease['monthly_rent'] }}</p>
+                                        <p class="text-lg font-black text-[#853953]">&#8369;{{ number_format($lease->monthly_rent, 2) }}</p>
                                     </div>
 
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Method of Payment</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease['payment_method'] }}</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->paymentmethod }}</p>
                                     </div>
 
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Lease Duration</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease['duration'] }}</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->duration }}</p>
                                         <p class="text-[10px] text-gray-400 font-bold mt-0.5">Min 3 months · Max 1 year</p>
                                     </div>
 
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Rental Deposit</p>
-                                        <p class="text-sm font-black text-gray-900">&#8369;{{ $lease['deposit'] }}</p>
+                                        <p class="text-sm font-black text-gray-900">&#8369;{{ number_format($lease->deposit, 2) }}</p>
                                     </div>
 
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Deposit Paid</p>
-                                        @if($lease['deposit_paid'])
+                                        @if($lease->isdepositpaid)
                                             <span class="inline-flex items-center gap-1.5 text-emerald-600 font-black text-sm">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                                 Yes — Paid
@@ -154,17 +143,16 @@
 
                                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Arranged by Staff</p>
-                                        <p class="text-sm font-black text-gray-900">{{ $lease['staff_name'] }}</p>
-                                        <p class="text-[10px] text-gray-400 font-bold mt-0.5">Staff No. {{ $lease['staff_no'] }}</p>
+                                        <p class="text-sm font-black text-gray-900">{{ $lease->staff_name }}</p>
+                                        <p class="text-[10px] text-gray-400 font-bold mt-0.5">Staff No. {{ $lease->staffno }}</p>
                                     </div>
 
                                 </div>
                             </div>
 
-                            {{-- Divider --}}
                             <div class="border-t border-dashed border-gray-200 mb-7"></div>
 
-                            {{-- Section 3: Contract Period --}}
+                            {{-- SECTION 3: Contract Period --}}
                             <div class="mb-7">
                                 <div class="flex items-center gap-2 mb-4">
                                     <span class="w-1 h-4 bg-[#853953] rounded-full"></span>
@@ -177,7 +165,7 @@
                                         </div>
                                         <div>
                                             <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Rent Start Date</p>
-                                            <p class="text-sm font-black text-gray-900 mt-0.5">{{ $lease['start'] }}</p>
+                                            <p class="text-sm font-black text-gray-900 mt-0.5">{{ \Carbon\Carbon::parse($lease->startdate)->format('F d, Y') }}</p>
                                         </div>
                                     </div>
                                     <div class="flex items-center gap-4 bg-[#853953] rounded-xl p-4">
@@ -186,16 +174,15 @@
                                         </div>
                                         <div>
                                             <p class="text-[10px] font-black uppercase tracking-widest text-pink-200">Rent End Date</p>
-                                            <p class="text-sm font-black text-white mt-0.5">{{ $lease['end'] }}</p>
+                                            <p class="text-sm font-black text-white mt-0.5">{{ \Carbon\Carbon::parse($lease->enddate)->format('F d, Y') }}</p>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Divider --}}
                             <div class="border-t border-dashed border-gray-200 mb-6"></div>
 
-                            {{-- Action Buttons --}}
+                            {{-- ACTION BUTTONS --}}
                             <div class="flex flex-wrap gap-3">
                                 <button class="flex items-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#853953] transition-all">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
@@ -205,35 +192,20 @@
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
                                     Request Renewal
                                 </button>
-                                <button class="flex items-center gap-2 px-5 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">
+                                <a href="{{ route('home') }}" class="flex items-center gap-2 px-5 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
                                     View Property Details
-                                </button>
+                                </a>
                             </div>
 
-                        </div>{{-- end document body --}}
-                    </div>
-
-                    @empty
-                    <div class="bg-white rounded-2xl p-12 text-center border-2 border-dashed border-gray-200">
-                        <div class="w-16 h-16 bg-pink-50 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                            <svg class="w-8 h-8 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
                         </div>
-                        <p class="text-gray-800 font-black text-lg">No Active Leases</p>
-                        <p class="text-gray-400 font-medium text-sm mt-1">You don't have any lease agreements yet.</p>
-                        <a href="{{ route('home') }}" class="inline-block mt-4 px-5 py-2.5 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] transition-all">
-                            Browse Properties
-                        </a>
                     </div>
-                    @endforelse
-
                 </div>
 
-                {{-- ===== SIDEBAR ===== --}}
+                {{-- SIDEBAR --}}
                 <aside class="w-full lg:w-72 shrink-0">
                     <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
 
-                        {{-- Sidebar Header --}}
                         <div class="px-6 py-5 border-b border-gray-50">
                             <h2 class="text-sm font-black text-gray-900 tracking-tight">Billing Overview</h2>
                             <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-0.5">Payment Schedule</p>
@@ -241,9 +213,7 @@
 
                         <div class="p-6 space-y-6">
 
-                            {{-- Lease Duration Progress Bar (added feature) --}}
-                            @isset($myLeases[0])
-                            @php $progress = $myLeases[0]['progress']; @endphp
+                            {{-- Lease Progress Bar --}}
                             <div>
                                 <div class="flex items-center justify-between mb-2">
                                     <p class="text-[10px] font-black uppercase tracking-widest text-gray-400">Lease Progress</p>
@@ -254,28 +224,33 @@
                                          style="width: {{ $progress }}%"></div>
                                 </div>
                                 <div class="flex justify-between mt-1.5">
-                                    <span class="text-[9px] font-bold text-gray-400">{{ $myLeases[0]['start'] }}</span>
-                                    <span class="text-[9px] font-bold text-gray-400">{{ $myLeases[0]['end'] }}</span>
+                                    <span class="text-[9px] font-bold text-gray-400">{{ \Carbon\Carbon::parse($lease->startdate)->format('M d, Y') }}</span>
+                                    <span class="text-[9px] font-bold text-gray-400">{{ \Carbon\Carbon::parse($lease->enddate)->format('M d, Y') }}</span>
                                 </div>
                             </div>
-                            @endisset
 
-                            {{-- Divider --}}
                             <div class="border-t border-gray-50"></div>
+
+                            {{-- Running Balance (from payment table) --}}
+                            @if($payments->isNotEmpty())
+                            <div class="bg-pink-50 border border-pink-100 rounded-xl p-4">
+                                <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Running Balance</p>
+                                <p class="text-lg font-black text-[#853953]">&#8369;{{ number_format($payments->first()->running_balance, 2) }}</p>
+                                <p class="text-[10px] text-gray-400 font-bold mt-1">as of {{ \Carbon\Carbon::parse($payments->first()->payment_date)->format('M d, Y') }}</p>
+                            </div>
+                            @endif
 
                             {{-- Upcoming Payment --}}
                             <div>
                                 <button @click="selectedSection = (selectedSection === 'upcoming' ? null : 'upcoming')"
                                     class="flex items-center justify-between w-full outline-none mb-3">
                                     <div class="flex items-center gap-2">
-                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all"
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center transition-all"
                                              :class="selectedSection === 'upcoming' ? 'bg-[#853953] text-white' : 'bg-gray-100 text-gray-400'">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                         </div>
                                         <span class="text-xs font-black uppercase tracking-wider"
-                                              :class="selectedSection === 'upcoming' ? 'text-gray-900' : 'text-gray-400'">
-                                            Upcoming Payment
-                                        </span>
+                                              :class="selectedSection === 'upcoming' ? 'text-gray-900' : 'text-gray-400'">Next Payment</span>
                                     </div>
                                     <svg class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200"
                                          :class="selectedSection === 'upcoming' ? 'rotate-180' : ''"
@@ -283,33 +258,37 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-
-                                <div x-show="selectedSection === 'upcoming'" x-collapse x-cloak>
+                                <div x-show="selectedSection === 'upcoming'" x-cloak>
                                     <div class="bg-pink-50 border border-pink-100 rounded-xl p-4">
                                         <div class="flex items-start gap-3">
                                             <div class="w-2 h-2 rounded-full bg-[#853953] mt-1.5 shrink-0 animate-pulse"></div>
                                             <div>
-                                                <p class="text-xs font-black text-gray-900">May 01, 2026</p>
-                                                <p class="text-[10px] font-black text-[#853953] mt-0.5">&#8369;40,134.99 — Monthly Rent</p>
-                                                <p class="text-[10px] text-gray-400 font-bold mt-1">Via Bank Transfer</p>
+                                                <p class="text-xs font-black text-gray-900">
+                                                    {{ \Carbon\Carbon::parse($lease->startdate)->addMonth()->format('M d, Y') }}
+                                                </p>
+                                                <p class="text-[10px] font-black text-[#853953] mt-0.5">&#8369;{{ number_format($lease->monthly_rent, 2) }}</p>
+                                                <p class="text-[10px] text-gray-400 font-bold mt-1">Via {{ $lease->paymentmethod }}</p>
                                             </div>
                                         </div>
                                     </div>
                                 </div>
                             </div>
 
-                            {{-- Payment History --}}
+                            {{-- Payment History (real data from payment table) --}}
                             <div>
                                 <button @click="selectedSection = (selectedSection === 'history' ? null : 'history')"
                                     class="flex items-center justify-between w-full outline-none mb-3">
                                     <div class="flex items-center gap-2">
-                                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all"
+                                        <div class="w-6 h-6 rounded-full flex items-center justify-center transition-all"
                                              :class="selectedSection === 'history' ? 'bg-[#853953] text-white' : 'bg-gray-100 text-gray-400'">
                                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
                                         </div>
                                         <span class="text-xs font-black uppercase tracking-wider"
                                               :class="selectedSection === 'history' ? 'text-gray-900' : 'text-gray-400'">
                                             Payment History
+                                            @if($payments->isNotEmpty())
+                                                <span class="ml-1 text-[#853953]">({{ $payments->count() }})</span>
+                                            @endif
                                         </span>
                                     </div>
                                     <svg class="w-3.5 h-3.5 text-gray-400 transition-transform duration-200"
@@ -318,27 +297,33 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M19 9l-7 7-7-7"/>
                                     </svg>
                                 </button>
-
-                                <div x-show="selectedSection === 'history'" x-collapse x-cloak>
-                                    <div class="space-y-2">
-                                        @foreach([
-                                            ['date' => 'April 01, 2026', 'amount' => '40,134.99'],
-                                            ['date' => 'March 01, 2026', 'amount' => '40,134.99'],
-                                            ['date' => 'February 01, 2026', 'amount' => '40,134.99'],
-                                        ] as $payment)
-                                        <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3 flex items-start gap-3">
-                                            <div class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
-                                            <div>
-                                                <p class="text-[10px] font-black text-gray-900">{{ $payment['date'] }}</p>
-                                                <p class="text-[10px] font-black text-emerald-600 mt-0.5">&#8369;{{ $payment['amount'] }} — Paid ✓</p>
+                                <div x-show="selectedSection === 'history'" x-cloak>
+                                    @if($payments->isEmpty())
+                                        <p class="text-xs text-gray-400 font-medium text-center py-4">No payments recorded yet.</p>
+                                    @else
+                                        <div class="space-y-2 max-h-64 overflow-y-auto pr-1">
+                                            @foreach($payments as $payment)
+                                            <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-3">
+                                                <div class="flex items-start justify-between gap-2">
+                                                    <div class="flex items-start gap-2">
+                                                        <div class="w-2 h-2 rounded-full bg-emerald-500 mt-1.5 shrink-0"></div>
+                                                        <div>
+                                                            <p class="text-[10px] font-black text-gray-900">{{ \Carbon\Carbon::parse($payment->payment_date)->format('M d, Y') }}</p>
+                                                            <p class="text-[10px] font-black text-emerald-600 mt-0.5">&#8369;{{ number_format($payment->amount_paid, 2) }} ✓</p>
+                                                            @if($payment->notes)
+                                                                <p class="text-[9px] text-gray-400 mt-0.5 italic">{{ $payment->notes }}</p>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                    <span class="text-[9px] text-gray-400 font-bold shrink-0">{{ $payment->payment_method }}</span>
+                                                </div>
                                             </div>
+                                            @endforeach
                                         </div>
-                                        @endforeach
-                                    </div>
+                                    @endif
                                 </div>
                             </div>
 
-                            {{-- Divider --}}
                             <div class="border-t border-gray-50"></div>
 
                             {{-- Contact Support --}}
@@ -355,6 +340,8 @@
                 </aside>
 
             </div>
+            @endif
+
         </div>
     </div>
 
