@@ -22,37 +22,35 @@
     </div>
 
     {{-- ===== MAIN CONTENT ===== --}}
-    <div class="py-10 bg-[#F3F4F6] min-h-screen">
+    <div class="py-10 bg-[#F3F4F6] min-h-screen" x-data="{ filter: 'All', search: '' }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             {{-- SEARCH + FILTER --}}
             <div class="mb-8 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <div class="relative flex-1 max-w-md">
-                    <input type="text" placeholder="Search by street, area or postcode..."
+                    <input type="text" x-model="search" placeholder="Search by street, area or postcode..."
                         class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
                     <svg class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/>
                     </svg>
                 </div>
                 <div class="flex gap-2">
-    {{-- All Button --}}
-    <a href="{{ route('welcome') }}"
-    class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all {{ !request('category') ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50' }}">
-        All
-    </a>
-
-    {{-- Flats Button --}}
-    <a href="{{ route('welcome', ['category' => 'Flat']) }}"
-    class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all {{ request('category') == 'Flat' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50' }}">
-        Flats
-    </a>
-
-    {{-- Houses Button --}}
-    <a href="{{ route('welcome', ['category' => 'House']) }}"
-    class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all {{ request('category') == 'House' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50' }}">
-        Houses
-    </a>
-</div>
+                    <button @click="filter = 'All'"
+                        :class="filter === 'All' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50 hover:text-[#853953]'"
+                        class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all">
+                        All
+                    </button>
+                    <button @click="filter = 'Flat'"
+                        :class="filter === 'Flat' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50 hover:text-[#853953]'"
+                        class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all">
+                        Flats
+                    </button>
+                    <button @click="filter = 'House'"
+                        :class="filter === 'House' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200 hover:bg-pink-50 hover:text-[#853953]'"
+                        class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all">
+                        Houses
+                    </button>
+                </div>
             </div>
 
             {{-- SECTION LABEL --}}
@@ -67,7 +65,17 @@
             {{-- PROPERTY CARDS (real DB data) --}}
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @forelse($properties as $property)
-                <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 hover:border-pink-100">
+                <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 hover:border-pink-100"
+                     x-show="
+                        (filter === 'All' || filter === '{{ $property->property_type }}') &&
+                        (search === '' || '{{ strtolower($property->street . ' ' . $property->area . ' ' . $property->city . ' ' . $property->postcode) }}'.includes(search.toLowerCase()))
+                     "
+                     x-transition:enter="transition ease-out duration-200"
+                     x-transition:enter-start="opacity-0 scale-95"
+                     x-transition:enter-end="opacity-100 scale-100"
+                     x-transition:leave="transition ease-in duration-150"
+                     x-transition:leave-start="opacity-100 scale-100"
+                     x-transition:leave-end="opacity-0 scale-95">
 
                     {{-- Image --}}
                     <div class="relative h-52 overflow-hidden">
