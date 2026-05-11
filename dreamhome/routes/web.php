@@ -60,7 +60,6 @@ Route::middleware('auth:staff')->group(function () {
     // Other staff pages
     Route::get('/staff/inspections', fn() => view('staff.inspections'))->name('staff.inspections');
     Route::get('/staff/reports',     fn() => view('staff.reports'))->name('staff.reports');
-    Route::get('/staff/leases', [LeasesController::class, 'index'])->name('staff.leases');
 
     // Staff profile
     Route::get('/staff/profile',    [StaffProfileController::class, 'edit'])->name('staff.profile.edit');
@@ -78,7 +77,10 @@ Route::middleware('auth')->group(function () {
     Route::get('/home',     [HomeController::class, 'index'])->name('home');
 
     // Leases
-    Route::get('/leases',   [LeasesController::class, 'index'])->name('leases');
+    Route::get('/leases',            [LeasesController::class, 'index'])->name('leases');
+    Route::get('/leases/pdf',        [LeasesController::class, 'downloadPdf'])->name('leases.pdf');
+    Route::post('/leases/renewal',   [LeasesController::class, 'requestRenewal'])->name('leases.renewal');
+    Route::post('/leases/support',   [LeasesController::class, 'contactSupport'])->name('leases.support');
 
     // Issue 5 & 9 fix: viewings now uses ClientViewingsController
     Route::get('/viewings', [ClientViewingsController::class, 'index'])->name('viewings');
