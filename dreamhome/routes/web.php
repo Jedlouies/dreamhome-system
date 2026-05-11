@@ -56,7 +56,10 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/viewings',        [ViewingsController::class, 'index'])->name('staff.viewings');
     Route::get('/staff/viewings/create', [ViewingsController::class, 'create'])->name('staff.viewings.create');
     Route::post('/staff/viewings',       [ViewingsController::class, 'store'])->name('staff.viewings.store');
-
+    Route::patch('/staff/viewings/{id}/assign', [ViewingsController::class, 'assign'])->name('staff.viewings.assign');
+    Route::get('/staff/viewings/create/{request_id?}', [ViewingsController::class, 'create'])->name('staff.viewings.create');
+    Route::get('/staff/viewings/process/{request_id}', [ViewingsController::class, 'processRequest'])
+    ->name('staff.viewings.process');
     // Other staff pages
     Route::get('/staff/inspections', fn() => view('staff.inspections'))->name('staff.inspections');
     Route::get('/staff/reports',     fn() => view('staff.reports'))->name('staff.reports');
@@ -82,6 +85,7 @@ Route::middleware('auth')->group(function () {
 
     // Issue 5 & 9 fix: viewings now uses ClientViewingsController
     Route::get('/viewings', [ClientViewingsController::class, 'index'])->name('viewings');
+    Route::post('/viewings/book', [ClientViewingsController::class, 'store'])->name('viewings.book');
 });
 
 require __DIR__.'/auth.php';

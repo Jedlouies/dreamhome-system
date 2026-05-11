@@ -11,12 +11,10 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-        // Issue 8 fix: pull real properties from DB
         $properties = DB::table(DB::raw("get_properties_by_branch(NULL, NULL) as p"))->get();
         $featured   = $properties->first();
         $rest       = $properties->skip(1)->values();
 
-        // Real stat counts
         $activeLeaseCount = 0;
         $viewingsCount    = 0;
 
