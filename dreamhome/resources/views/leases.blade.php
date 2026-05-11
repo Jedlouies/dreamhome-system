@@ -71,70 +71,149 @@
         </div>
     </div>
 
-    {{-- ===== CONTACT SUPPORT MODAL ===== --}}
+    {{-- ===== CONTACT SUPPORT MODAL (2-STEP) ===== --}}
     <div x-show="showSupport" x-cloak
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-        @click.self="showSupport = false"
-        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+        @click.self="showSupport = false; supportStep = 1"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4"
+        x-data="{ supportStep: 1 }">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
-            
+
             {{-- Header --}}
-            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5 flex items-start justify-between">
-                <div>
-                    <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Help & Support</p>
-                    <h3 class="text-white font-black text-lg tracking-tight mt-0.5">Contact Support</h3>
-                    <p class="text-pink-200/70 text-[11px] font-bold mt-0.5">We'll respond as soon as possible</p>
+            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5">
+                <div class="flex items-start justify-between mb-4">
+                    <div>
+                        <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Help & Support</p>
+                        <h3 class="text-white font-black text-lg tracking-tight mt-0.5">Contact Support</h3>
+                        <p class="text-pink-200/70 text-[11px] font-bold mt-0.5">We'll respond as soon as possible</p>
+                    </div>
+                    <button @click="showSupport = false; supportStep = 1" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
                 </div>
-                <button @click="showSupport = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
-                </button>
+                {{-- Step Indicator --}}
+                <div class="flex items-center gap-2">
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all"
+                             :class="supportStep >= 1 ? 'bg-white text-[#853953]' : 'bg-white/20 text-white'">1</div>
+                        <span class="text-[10px] font-black text-white/80 uppercase tracking-wider">Branch Info</span>
+                    </div>
+                    <div class="flex-1 h-px bg-white/20 mx-1"></div>
+                    <div class="flex items-center gap-1.5">
+                        <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all"
+                             :class="supportStep >= 2 ? 'bg-white text-[#853953]' : 'bg-white/20 text-white'">2</div>
+                        <span class="text-[10px] font-black text-white/80 uppercase tracking-wider">Your Issue</span>
+                    </div>
+                </div>
             </div>
 
-            {{-- Form --}}
-            <form method="POST" action="{{ route('leases.support') }}" class="p-6 space-y-4">
+            <form method="POST" action="{{ route('leases.support') }}">
                 @csrf
-                {{-- Issue Type --}}
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">What is your issue?</label>
-                    <div class="space-y-2">
-                        @foreach([
-                            'Billing Issue'        => 'Problem with payment records or running balance.',
-                            'Property Maintenance' => 'Something in the property needs repair or attention.',
-                            'Lease Inquiry'        => 'Questions about my lease terms or contract.',
-                            'Payment Problem'      => 'Having trouble making or recording a payment.',
-                            'Other'                => 'Something else not listed above.',
-                        ] as $value => $description)
-                        <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-[#853953]/30 hover:bg-pink-50/50 transition-all has-[:checked]:border-[#853953] has-[:checked]:bg-pink-50">
-                            <input type="radio" name="issue_type" value="{{ $value }}" class="mt-0.5 accent-[#853953] shrink-0" required>
-                            <div>
-                                <p class="text-xs font-black text-gray-800">{{ $value }}</p>
-                                <p class="text-[10px] text-gray-400 font-medium mt-0.5">{{ $description }}</p>
+
+                {{-- ===== STEP 1: Branch Info ===== --}}
+                <div x-show="supportStep === 1" class="p-6 space-y-4">
+
+                    {{-- Branch Info Card --}}
+                    @if($branch)
+                    <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Branch Contact Info</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-[#853953]/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 font-bold">Phone</p>
+                                    <p class="text-sm font-black text-gray-900">{{ $branch->phone }}</p>
+                                </div>
                             </div>
-                        </label>
-                        @endforeach
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-[#853953]/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 font-bold">Address</p>
+                                    <p class="text-sm font-black text-gray-900">{{ $branch->street }}, {{ $branch->area }}</p>
+                                    <p class="text-xs text-gray-400 font-bold">{{ $branch->city }}</p>
+                                </div>
+                            </div>
+                            @if(isset($branch->faxno))
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-[#853953]/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 font-bold">Fax</p>
+                                    <p class="text-sm font-black text-gray-900">{{ $branch->faxno }}</p>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    <p class="text-xs text-gray-400 font-medium text-center">You can call us directly or submit a support ticket below.</p>
+
+                    <div class="flex gap-3 pt-1">
+                        <button type="button" @click="showSupport = false; supportStep = 1"
+                            class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                            Cancel
+                        </button>
+                        <button type="button" @click="supportStep = 2"
+                            class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all flex items-center justify-center gap-2">
+                            Submit Ticket
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                        </button>
                     </div>
                 </div>
 
-                {{-- Message --}}
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Describe Your Issue</label>
-                    <textarea name="message" rows="3" placeholder="Please describe the issue in detail..." required
-                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
+                {{-- ===== STEP 2: Issue Form ===== --}}
+                <div x-show="supportStep === 2" class="p-6 space-y-4">
+
+                    {{-- Issue Type --}}
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">What is your issue?</label>
+                        <div class="space-y-2">
+                            @foreach([
+                                'Billing Issue'        => 'Problem with payment records or running balance.',
+                                'Property Maintenance' => 'Something in the property needs repair or attention.',
+                                'Lease Inquiry'        => 'Questions about my lease terms or contract.',
+                                'Payment Problem'      => 'Having trouble making or recording a payment.',
+                                'Other'                => 'Something else not listed above.',
+                            ] as $value => $description)
+                            <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-[#853953]/30 hover:bg-pink-50/50 transition-all has-[:checked]:border-[#853953] has-[:checked]:bg-pink-50">
+                                <input type="radio" name="issue_type" value="{{ $value }}" class="mt-0.5 accent-[#853953] shrink-0" required>
+                                <div>
+                                    <p class="text-xs font-black text-gray-800">{{ $value }}</p>
+                                    <p class="text-[10px] text-gray-400 font-medium mt-0.5">{{ $description }}</p>
+                                </div>
+                            </label>
+                            @endforeach
+                        </div>
+                    </div>
+
+                    {{-- Message --}}
+                    <div>
+                        <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Describe Your Issue</label>
+                        <textarea name="message" rows="3" placeholder="Please describe the issue in detail..." required
+                            class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-1">
+                        <button type="button" @click="supportStep = 1"
+                            class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                            Back
+                        </button>
+                        <button type="submit"
+                            class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all">
+                            Submit Ticket
+                        </button>
+                    </div>
                 </div>
 
-                {{-- Buttons --}}
-                <div class="flex gap-3 pt-1">
-                    <button type="button" @click="showSupport = false"
-                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
-                        Cancel
-                    </button>
-                    <button type="submit"
-                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all">
-                        Submit Ticket
-                    </button>
-                </div>
             </form>
         </div>
     </div>
