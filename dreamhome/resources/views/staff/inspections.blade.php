@@ -3,7 +3,7 @@
         [x-cloak] { display: none !important; }
     </style>
 
-    <div class="py-12 bg-[#F3F4F6] min-h-screen" x-data="{ selectedDate: 'April 25, 2026' }">
+    <div class="py-12 bg-[#F3F4F6] min-h-screen" x-data="{ selectedDate: 'April 25, 2026', showModal: {{ $errors->any() ? 'true' : 'false' }} }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
             <div class="flex flex-col lg:flex-row gap-8 items-start">
                 
@@ -33,8 +33,8 @@
 
                     <div class="space-y-5">
                         @php
-                            // Mock data - replace with $inspections from your controller
-                            $inspections = [
+                            // Mock data - replace with actual $inspections loop later
+                            $mockInspections = [
                                 [
                                     'id' => 'INSP-772',
                                     'property' => 'Tierra Nava (P001)',
@@ -42,17 +42,11 @@
                                     'date' => 'April 21, 2026',
                                     'evaluation' => 'Property is in excellent condition. Minor paint touch-ups required in the master bedroom. Plumbing systems verified and pressure tested.'
                                 ],
-                                [
-                                    'id' => 'INSP-104',
-                                    'property' => 'Bria Homes (P002)',
-                                    'staff' => 'S002 (Alice Guo)',
-                                    'date' => 'April 15, 2026',
-                                    'evaluation' => 'Electrical wiring inspected and passed safety standards. Garden maintenance needed to prevent overgrowth into gutters.'
-                                ]
                             ];
                         @endphp
 
-                        @foreach($inspections as $item)
+                        
+                        @foreach($mockInspections as $item)
                         <div class="bg-white rounded-[2.5rem] p-6 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 border border-transparent hover:border-pink-50 flex flex-col md:flex-row items-center gap-6 group cursor-pointer">
                             <div class="w-24 h-24 bg-gradient-to-br from-[#853953] to-[#5d273a] rounded-[2rem] flex-shrink-0 flex items-center justify-center shadow-inner">
                                 <svg class="w-10 h-10 text-white opacity-40" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -94,38 +88,52 @@
                         </div>
 
                         <div class="flex-1 space-y-8 px-2">
-                            @foreach(['April 25, 2026', 'April 28, 2026'] as $date)
-                            <div class="relative">
-                                <button @click="selectedDate = (selectedDate === '{{ $date }}' ? null : '{{ $date }}')" 
-                                    class="flex items-center w-full transition-all group outline-none">
-                                    <div class="w-7 h-7 rounded-full flex items-center justify-center transition-all mr-3 shadow-sm"
-                                        :class="selectedDate === '{{ $date }}' ? 'bg-[#853953] text-white' : 'bg-gray-100 text-gray-400'">
-                                        <svg class="w-3 h-3 transition-transform duration-300" :class="selectedDate === '{{ $date }}' ? 'rotate-0' : 'rotate-90'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"></path>
-                                        </svg>
-                                    </div>
-                                    <span class="text-xs font-black transition-colors" :class="selectedDate === '{{ $date }}' ? 'text-gray-900' : 'text-gray-400'">{{ $date }}</span>
-                                </button>
+@php
+        // Group your real database inspections by formatted date
+        $groupedInspections = $inspections->groupBy(function($item) {
+            return \Carbon\Carbon::parse($item->inspection_date)->format('F d, Y');
+        });
+    @endphp
 
-                                <div x-show="selectedDate === '{{ $date }}'" x-collapse x-cloak class="mt-4 ml-3.5 pl-6 border-l border-pink-100 space-y-5">
-                                    <div class="relative group/item cursor-pointer">
-                                        <div class="absolute -left-[29px] top-1 w-1.5 h-1.5 rounded-full bg-[#853953] ring-4 ring-white group-hover:scale-125 transition-transform"></div>
-                                        <p class="text-[11px] font-black text-gray-700 group-hover:text-[#853953] transition-colors leading-none">Valencia Estates (P012)</p>
-                                        <p class="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-tighter">Full Structural Check</p>
-                                    </div>
-                                    
-                                    <div class="relative group/item cursor-pointer">
-                                        <div class="absolute -left-[29px] top-1 w-1.5 h-1.5 rounded-full bg-pink-200 ring-4 ring-white group-hover:bg-[#853953] transition-colors"></div>
-                                        <p class="text-[11px] font-black text-gray-700 group-hover:text-[#853953] transition-colors leading-none">Gran Europa (P034)</p>
-                                        <p class="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-tighter">Post-Lease Review</p>
-                                    </div>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
+    @forelse($groupedInspections as $date => $dailyInspections)
+    <div class="relative">
+        <button @click="selectedDate = (selectedDate === '{{ $date }}' ? null : '{{ $date }}')" 
+            class="flex items-center w-full transition-all group outline-none">
+            <div class="w-7 h-7 rounded-full flex items-center justify-center transition-all mr-3 shadow-sm"
+                :class="selectedDate === '{{ $date }}' ? 'bg-[#853953] text-white' : 'bg-gray-100 text-gray-400'">
+                <svg class="w-3 h-3 transition-transform duration-300" :class="selectedDate === '{{ $date }}' ? 'rotate-0' : 'rotate-90'" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M20 12H4"></path>
+                </svg>
+            </div>
+            <span class="text-xs font-black transition-colors" :class="selectedDate === '{{ $date }}' ? 'text-gray-900' : 'text-gray-400'">{{ $date }}</span>
+        </button>
 
+        <div x-show="selectedDate === '{{ $date }}'" x-collapse x-cloak class="mt-4 ml-3.5 pl-6 border-l border-pink-100 space-y-5">
+            
+            @foreach($dailyInspections as $insp)
+            <div class="relative group/item cursor-pointer">
+                <div class="absolute -left-[29px] top-1 w-1.5 h-1.5 rounded-full bg-[#853953] ring-4 ring-white group-hover:scale-125 transition-transform"></div>
+                
+                <p class="text-[11px] font-black text-gray-700 group-hover:text-[#853953] transition-colors leading-none">
+                    {{ $insp->property->street ?? 'Property' }} ({{ $insp->propertyno }})
+                </p>
+                
+                <p class="text-[9px] text-gray-400 font-bold mt-1 uppercase tracking-tighter truncate">
+                    {{ $insp->evaluation }}
+                </p>
+            </div>
+            @endforeach
+
+        </div>
+    </div>
+    @empty
+        <div class="text-center py-6">
+            <p class="text-[10px] font-bold text-gray-400 uppercase tracking-widest">No upcoming reviews</p>
+        </div>
+    @endforelse
+</div>
                         <div class="mt-10 pt-6 border-t border-gray-50 px-2">
-                            <button class="w-full bg-[#853953] text-white py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-pink-900 hover:shadow-pink-100 transition-all flex items-center justify-center gap-3">
+                            <button @click="showModal = true" class="w-full bg-[#853953] text-white py-4 rounded-3xl font-black text-[10px] uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-pink-900 hover:shadow-pink-100 transition-all flex items-center justify-center gap-3">
                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 4v16m8-8H4"></path>
                                 </svg>
@@ -134,8 +142,9 @@
                         </div>
                     </div>
                 </aside>
-
+                
             </div>
         </div>
+        <x-schedule-modal :properties="$properties" :staffMembers="$staffMembers" />
     </div>
 </x-app-layout>

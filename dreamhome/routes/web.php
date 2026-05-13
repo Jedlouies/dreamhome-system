@@ -85,6 +85,9 @@ Route::middleware('auth:staff')->group(function () {
 
     // Other staff pages
     Route::get('/staff/inspections', fn() => view('staff.inspections'))->name('staff.inspections');
+    Route::get('/staff/inspections', [App\Http\Controllers\InspectionController::class, 'index'])->name('staff.inspections');
+    Route::post('/staff/inspections', [App\Http\Controllers\InspectionController::class, 'store'])->name('staff.inspections.store');
+    
     Route::get('/staff/reports',     fn() => view('staff.reports'))->name('staff.reports');
 
     Route::get('/staff/reports', [ReportController::class, 'index'])->name('staff.reports');
