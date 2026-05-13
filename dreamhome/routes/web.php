@@ -27,6 +27,10 @@ Route::post('/staff/login', [StaffLoginController::class, 'login']);
 Route::middleware('auth:staff')->group(function () {
 
     Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
+    Route::get('/staff/dashboard/report', [DashboardController::class, 'downloadReport'])
+        ->name('staff.dashboard.report');
+    Route::post('/staff/viewings/feedback', [DashboardController::class, 'updateViewingFeedback'])
+        ->name('staff.viewings.feedback');   
 
     // Staff list
     Route::get('/staff/staff-list',          [StaffProfileController::class, 'index'])->name('staff.staff');
@@ -102,6 +106,8 @@ Route::middleware('auth')->group(function () {
     // Issue 5 & 9 fix: viewings now uses ClientViewingsController
     Route::get('/viewings', [ClientViewingsController::class, 'index'])->name('viewings');
     Route::post('/viewings/book', [ClientViewingsController::class, 'store'])->name('viewings.book');
+
+    ;
 });
 
 require __DIR__.'/auth.php';
