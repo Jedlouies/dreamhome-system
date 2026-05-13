@@ -43,21 +43,27 @@ class StaffProfileController extends Controller
             return view('staff.show', compact('staff'));
         }
 
-public function edit($id)
+public function edit($id = null)
 {
+    // If no ID is passed in the URL, use the authenticated staff's ID
+    $staffId = $id ?: auth()->guard('staff')->id();
+
     $staff = DB::table(DB::raw("get_staff_details(CAST(:id AS TEXT))"))
-        ->setBindings(['id' => $id])
+        ->setBindings(['id' => $staffId])
         ->first();
 
     $branches = DB::table('branch')->select('branchno', 'city')->get();
 
     if (!$staff) {
-        abort(404);
+        abort(404, 'Staff member not found.');
     }
 
-    return view('staff.edit', compact('staff', 'branches'));
+    // Pass the staff data as 'user' to match your edit.blade.php variables
+    return view('staff.profile.edit', [
+        'user' => $staff,
+        'branches' => $branches
+    ]);
 }
-
 public function update(Request $request, $id)
 {
     $request->validate([
