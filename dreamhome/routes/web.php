@@ -13,6 +13,7 @@ use App\Http\Controllers\ViewingsController;
 use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ClientViewingsController;
+use App\Http\Controllers\StaffLeasesController;
 
 // ===== PUBLIC ROUTES =====
 Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
@@ -26,6 +27,10 @@ Route::post('/staff/login', [StaffLoginController::class, 'login']);
 Route::middleware('auth:staff')->group(function () {
 
     Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
+    Route::get('/staff/dashboard/report', [DashboardController::class, 'downloadReport'])
+        ->name('staff.dashboard.report');
+    Route::post('/staff/viewings/feedback', [DashboardController::class, 'updateViewingFeedback'])
+        ->name('staff.viewings.feedback');   
 
     // Staff list
     Route::get('/staff/staff-list',          [StaffProfileController::class, 'index'])->name('staff.staff');
@@ -56,6 +61,21 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/viewings',        [ViewingsController::class, 'index'])->name('staff.viewings');
     Route::get('/staff/viewings/create', [ViewingsController::class, 'create'])->name('staff.viewings.create');
     Route::post('/staff/viewings',       [ViewingsController::class, 'store'])->name('staff.viewings.store');
+    Route::patch('/staff/viewings/{id}/assign', [ViewingsController::class, 'assign'])->name('staff.viewings.assign');
+    Route::get('/staff/viewings/create/{request_id?}', [ViewingsController::class, 'create'])->name('staff.viewings.create');
+    Route::get('/staff/viewings/process/{request_id}', [ViewingsController::class, 'processRequest'])
+    ->name('staff.viewings.process');
+
+   // Lease Management Routes
+    Route::get('/staff/leases', [StaffLeasesController::class, 'index'])->name('staff.leases.index');
+    Route::get('/staff/leases/create', [StaffLeasesController::class, 'create'])->name('staff.leases.create');
+    Route::post('/staff/leases/store', [StaffLeasesController::class, 'store'])->name('staff.leases.store');
+    
+    // Detailed View: Shows month-by-month breakdown
+    Route::get('/staff/leases/{id}', [StaffLeasesController::class, 'show'])->name('staff.leases.show');
+    
+    Route::get('/staff/leases/edit/{id}', [StaffLeasesController::class, 'edit'])->name('staff.leases.edit');
+    Route::patch('/staff/leases/update/{id}', [StaffLeasesController::class, 'update'])->name('staff.leases.update');
 
     // Other staff pages
     Route::get('/staff/inspections', fn() => view('staff.inspections'))->name('staff.inspections');
@@ -81,9 +101,13 @@ Route::middleware('auth')->group(function () {
     Route::get('/leases/pdf',        [LeasesController::class, 'downloadPdf'])->name('leases.pdf');
     Route::post('/leases/renewal',   [LeasesController::class, 'requestRenewal'])->name('leases.renewal');
     Route::post('/leases/support',   [LeasesController::class, 'contactSupport'])->name('leases.support');
+    Route::post('/leases/pay-advance', [LeasesController::class, 'processPayment'])->name('renter.payments.process');
 
     // Issue 5 & 9 fix: viewings now uses ClientViewingsController
     Route::get('/viewings', [ClientViewingsController::class, 'index'])->name('viewings');
+    Route::post('/viewings/book', [ClientViewingsController::class, 'store'])->name('viewings.book');
+
+    ;
 });
 
 require __DIR__.'/auth.php';

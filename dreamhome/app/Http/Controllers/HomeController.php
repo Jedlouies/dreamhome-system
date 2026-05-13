@@ -11,20 +11,10 @@ class HomeController extends Controller
     {
         $user = Auth::user();
 
-        $properties = DB::table(DB::raw("get_properties_by_branch(
-            CAST(:branch AS TEXT),
-            CAST(:search AS TEXT)
-        ) as property_data"))
-        ->setBindings([
-            'branch' => null,
-            'search' => null,
-        ])
-        ->get();
+        $properties = DB::table(DB::raw("get_properties_by_branch(NULL, NULL) as p"))->get();
+        $featured   = $properties->first();
+        $rest       = $properties->skip(1)->values();
 
-        $featured = $properties->first();
-        $rest     = $properties->skip(1)->values();
-
-        // Real stat counts
         $activeLeaseCount = 0;
         $viewingsCount    = 0;
 

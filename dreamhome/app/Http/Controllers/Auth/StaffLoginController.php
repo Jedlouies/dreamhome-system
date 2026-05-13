@@ -20,6 +20,14 @@ class StaffLoginController extends Controller
 
         if (Auth::guard('staff')->attempt($credentials)) {
             $request->session()->regenerate();
+            
+            $staff = Auth::guard('staff')->user();
+            
+            // Role-based redirection logic
+            if (strtolower($staff->position) === 'regular') {
+                return redirect()->route('staff.dashboard');
+            }
+
             return redirect()->intended('/staff/dashboard');
         }
 
@@ -27,13 +35,12 @@ class StaffLoginController extends Controller
             'email'=> 'The provided staff credentials do not match our records.',
         ]);
     }
+
     public function logout(Request $request)
-        {
-            Auth::guard('staff')->logout();
-
-            $request->session()->invalidate();
-            $request->session()->regenerateToken();
-
-            return redirect('/staff/login');
-        }
+    {
+        Auth::guard('staff')->logout();
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+        return redirect('/staff/login');
+    }
 }

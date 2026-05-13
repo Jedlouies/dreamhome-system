@@ -6,11 +6,13 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Barryvdh\DomPDF\Facade\Pdf;
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
 
 class LeasesController extends Controller
 {
     // ===== SHARED LEASE FETCH =====
-    private function fetchLease($renterno)
+private function fetchLease($renterno)
     {
         return DB::table('lease_agreement as la')
             ->join('property as p', 'la.propertyno', '=', 'p.propertyno')
@@ -18,27 +20,11 @@ class LeasesController extends Controller
             ->join('renter as r',   'la.renterno',   '=', 'r.renterno')
             ->where('la.renterno', $renterno)
             ->select(
-                'la.leaseno',
-                'la.propertyno',
-                'la.renterno',
-                'la.staffno',
-                'la.monthly_rent',
-                'la.paymentmethod',
-                'la.deposit',
-                'la.isdepositpaid',
-                'la.startdate',
-                'la.enddate',
-                'la.duration',
-                'la.total_paid',
-                'la.balance',
-                'la.payment_status',
-                'la.is_overdue',
-                'p.street',
-                'p.area',
-                'p.city',
-                'p.postcode',
-                'p.property_type',
-                'p.no_of_rooms',
+                'la.leaseno', 'la.propertyno', 'la.renterno', 'la.staffno',
+                'la.monthly_rent', 'la.paymentmethod', 'la.deposit',
+                'la.isdepositpaid', 'la.startdate', 'la.enddate', 'la.duration',
+                'la.total_paid', 'la.balance', 'la.payment_status', 'la.is_overdue',
+                'p.street', 'p.area', 'p.city', 'p.postcode', 'p.property_type', 'p.no_of_rooms',
                 DB::raw("s.firstname || ' ' || s.lastname as staff_name"),
                 DB::raw("r.firstname || ' ' || r.lastname as renter_name")
             )
@@ -51,13 +37,7 @@ class LeasesController extends Controller
         return DB::table('payment')
             ->where('leaseno', $leaseno)
             ->orderByDesc('payment_date')
-            ->orderByDesc('paymentid')
             ->get();
-    }
-
-    private function fetchBranch($branchno = 'B001')
-    {
-        return DB::table('branch')->where('branchno', $branchno)->first();
     }
 
     private function calcProgress($lease)
@@ -73,25 +53,82 @@ class LeasesController extends Controller
     // ===== INDEX =====
     public function index()
     {
-        $user = Auth::user();
+    
 
-        if (!$user->renterno) {
-            return view('leases', [
-                'lease'    => null,
-                'payments' => collect(),
-                'progress' => 0,
-                'branch'   => null,
-            ]);
+        $user = Auth::user();
+        if (!$user->renterno) return view('leases', ['lease' => null]);
+
+        $lease = $this->fetchLease($user->renterno);
+        if (!$lease) return view('leases', ['lease' => null]);
+
+        $payments = $this->fetchPayments($lease->leaseno);
+        $progress = $this->calcProgress($lease);
+
+        // Map payments by Month-Year for the baseline tracking
+        $paymentMap = $payments->mapWithKeys(function ($p) {
+            return [Carbon::parse($p->payment_date)->format('F Y') => $p];
+        });
+
+        // Generate the monthly baseline schedule
+        $start = Carbon::parse($lease->startdate)->startOfMonth();
+        $end = Carbon::parse($lease->enddate)->startOfMonth();
+        $periods = CarbonPeriod::create($start, '1 month', $end);
+
+        $schedule = [];
+        foreach ($periods as $date) {
+            $monthKey = $date->format('F Y');
+            $schedule[] = [
+                'month' => $monthKey,
+                'is_paid' => isset($paymentMap[$monthKey]),
+                'payment' => $paymentMap[$monthKey] ?? null,
+            ];
         }
 
-        $lease    = $this->fetchLease($user->renterno);
-        $payments = $lease ? $this->fetchPayments($lease->leaseno) : collect();
-        $progress = $lease ? $this->calcProgress($lease) : 0;
-        $branch   = $this->fetchBranch();
-
-        return view('leases', compact('lease', 'payments', 'progress', 'branch'));
+        return view('leases', compact('lease', 'schedule', 'payments', 'progress'));
     }
 
+    // ===== PROCESS ADVANCE PAYMENT =====
+    public function processPayment(Request $request)
+    {
+        $request->validate([
+            'leaseno' => 'required|exists:lease_agreement,leaseno',
+            'months_to_pay' => 'required|integer|min:1|max:12',
+            'payment_method' => 'required|string'
+        ]);
+
+        $lease = DB::table('lease_agreement')->where('leaseno', $request->leaseno)->first();
+        $numMonths = (int) $request->months_to_pay;
+
+        // Find the next unpaid month
+        $latestPayment = DB::table('payment')
+            ->where('leaseno', $request->leaseno)
+            ->orderBy('payment_date', 'desc')
+            ->first();
+
+        $startDate = $latestPayment 
+            ? Carbon::parse($latestPayment->payment_date)->addMonth()->startOfMonth()
+            : Carbon::parse($lease->startdate)->startOfMonth();
+
+        DB::transaction(function () use ($request, $numMonths, $lease, $startDate) {
+            for ($i = 0; $i < $numMonths; $i++) {
+                $targetMonth = $startDate->copy()->addMonths($i);
+                
+                // Fixed: Generating manual Payment ID to avoid Not Null Violation
+                $paymentId = 'PAY-' . strtoupper(bin2hex(random_bytes(3))) . '-' . time() . $i;
+
+                DB::table('payment')->insert([
+                    'paymentid'      => $paymentId,
+                    'leaseno'        => $request->leaseno,
+                    'payment_date'   => $targetMonth,
+                    'amount_paid'    => $lease->monthly_rent,
+                    'payment_method' => $request->payment_method,
+                    'notes'          => "Advance payment for " . $targetMonth->format('F Y'),
+                ]);
+            }
+        });
+
+        return back()->with('success', "Rent payment for $numMonths month(s) processed successfully!");
+    }
     // ===== DOWNLOAD PDF =====
     public function downloadPdf()
     {
@@ -167,4 +204,5 @@ class LeasesController extends Controller
 
         return back()->with('support_success', 'Your support ticket has been submitted! We\'ll get back to you shortly.');
     }
+
 }
