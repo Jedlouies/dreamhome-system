@@ -76,7 +76,7 @@ class ReportController extends Controller
     {
         $data = DB::table('lease_agreement as l')
             ->join('property as p', 'l.propertyno', '=', 'p.propertyno')
-            ->select('l.leaseno', 'p.street', 'l.payment_method', 'l.monthly_rent', 'l.startdate')
+            ->select('l.leaseno', 'p.street', 'l.paymentmethod', 'l.monthly_rent', 'l.startdate')
             ->get();
         return $this->export('Revenue_Collection_Report', $data);
     }
@@ -100,7 +100,7 @@ class ReportController extends Controller
 
     private function export($filename, $data)
     {
-        $pdf = Pdf::loadView('staff.reports.pdf-template', [
+        $pdf = Pdf::loadView('staff.reports.template', [
             'title' => str_replace('_', ' ', $filename),
             'data' => $data,
             'generated_at' => now()->format('F d, Y h:i A')

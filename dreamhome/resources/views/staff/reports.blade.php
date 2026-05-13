@@ -42,16 +42,7 @@
                         @endforeach
                     </div>
                 </div>
-
-                <aside class="w-full lg:w-80 flex-shrink-0">
-                    <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-white sticky top-6 min-h-[400px]">
-                        <div class="mb-6">
-                            <h2 class="text-xl font-black text-gray-800 tracking-tighter">Recent History</h2>
-                            <p class="text-[10px] uppercase font-bold text-gray-400 tracking-widest">Local Session History</p>
-                        </div>
-                        <p class="text-xs text-gray-400 italic">Click a report card to generate a new file.</p>
-                    </div>
-                </aside>
+    
             </div>
         </div>
     </div>
