@@ -14,6 +14,7 @@ use App\Http\Controllers\WelcomeController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ClientViewingsController;
 use App\Http\Controllers\StaffLeasesController;
+use App\Http\Controllers\ReportController;
 
 // ===== PUBLIC ROUTES =====
 Route::get('/', [WelcomeController::class, 'index'])->name('welcome');
@@ -34,6 +35,11 @@ Route::middleware('auth:staff')->group(function () {
 
     // Staff list
     Route::get('/staff/staff-list',          [StaffProfileController::class, 'index'])->name('staff.staff');
+    Route::get('/staff/profile', [StaffProfileController::class, 'edit'])->name('staff.profile.edit');
+    Route::patch('/staff/profile', [StaffProfileController::class, 'update'])->name('staff.profile.update');
+
+    // Admin Staff Management (Accessed via Staff List)
+    Route::get('/staff/{id}/edit', [StaffProfileController::class, 'edit'])->name('staff.edit');
     Route::get('/staff/create',              [StaffProfileController::class, 'create'])->name('staff.create');
     Route::post('/staff/store',              [StaffProfileController::class, 'store'])->name('staff.store');
     Route::get('/staff/staff-list/{id}',     [StaffProfileController::class, 'show'])->name('staff.show');
@@ -80,6 +86,9 @@ Route::middleware('auth:staff')->group(function () {
     // Other staff pages
     Route::get('/staff/inspections', fn() => view('staff.inspections'))->name('staff.inspections');
     Route::get('/staff/reports',     fn() => view('staff.reports'))->name('staff.reports');
+
+    Route::get('/staff/reports', [ReportController::class, 'index'])->name('staff.reports');
+    Route::get('/staff/reports/generate', [ReportController::class, 'generate'])->name('staff.reports.generate');
 
     // Staff profile
     Route::get('/staff/profile',    [StaffProfileController::class, 'edit'])->name('staff.profile.edit');
