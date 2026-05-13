@@ -112,6 +112,63 @@
             <form method="POST" action="{{ route('leases.support') }}">
                 @csrf
 
+                {{-- ===== STEP 1: Branch Info ===== --}}
+                <div x-show="supportStep === 1" class="p-6 space-y-4">
+
+                    {{-- Branch Info Card --}}
+                    @if($branch)
+                    <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Branch Contact Info</p>
+                        <div class="space-y-3">
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-[#853953]/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 font-bold">Phone</p>
+                                    <p class="text-sm font-black text-gray-900">{{ $branch->phone }}</p>
+                                </div>
+                            </div>
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-[#853953]/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 font-bold">Address</p>
+                                    <p class="text-sm font-black text-gray-900">{{ $branch->street }}, {{ $branch->area }}</p>
+                                    <p class="text-xs text-gray-400 font-bold">{{ $branch->city }}</p>
+                                </div>
+                            </div>
+                            @if(isset($branch->faxno))
+                            <div class="flex items-center gap-3">
+                                <div class="w-8 h-8 bg-[#853953]/10 rounded-lg flex items-center justify-center shrink-0">
+                                    <svg class="w-4 h-4 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] text-gray-400 font-bold">Fax</p>
+                                    <p class="text-sm font-black text-gray-900">{{ $branch->faxno }}</p>
+                                </div>
+                            </div>
+                            @endif
+                        </div>
+                    </div>
+                    @endif
+
+                    <p class="text-xs text-gray-400 font-medium text-center">You can call us directly or submit a support ticket below.</p>
+
+                    <div class="flex gap-3 pt-1">
+                        <button type="button" @click="showSupport = false; supportStep = 1"
+                            class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                            Cancel
+                        </button>
+                        <button type="button" @click="supportStep = 2"
+                            class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all flex items-center justify-center gap-2">
+                            Submit Ticket
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 5l7 7-7 7"/></svg>
+                        </button>
+                    </div>
+                </div>
+
                 {{-- ===== STEP 2: Issue Form ===== --}}
                 <div x-show="supportStep === 2" class="p-6 space-y-4">
 
@@ -386,7 +443,7 @@
             </div>
 
             {{-- SIDEBAR --}}
-            <aside class="w-full lg:w-72 shrink-0">
+            <aside class="w-full lg:w-72 shrink-0 space-y-5">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
 
                     <div class="px-6 py-5 border-b border-gray-50">
@@ -539,8 +596,6 @@
 
                     </div>
                 </div>
-            </aside>
-
         </div>
         @endif
 
