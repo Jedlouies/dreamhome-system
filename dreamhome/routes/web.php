@@ -84,7 +84,6 @@ Route::middleware('auth:staff')->group(function () {
     Route::patch('/staff/leases/update/{id}', [StaffLeasesController::class, 'update'])->name('staff.leases.update');
 
     // Other staff pages
-    Route::get('/staff/inspections', fn() => view('staff.inspections'))->name('staff.inspections');
     Route::get('/staff/inspections', [App\Http\Controllers\InspectionController::class, 'index'])->name('staff.inspections');
     Route::post('/staff/inspections', [App\Http\Controllers\InspectionController::class, 'store'])->name('staff.inspections.store');
     
