@@ -8,22 +8,21 @@ use Illuminate\Http\Request;
 
 class ClientViewingsController extends Controller
 {
-    public function index()
-    {
-        $user = Auth::user();
-        $viewings = collect();
+public function index()
+{
+    $user = auth()->user();
+    
+    // Fetch viewings with property and staff details
+    $viewings = DB::table('viewing as v')
+        ->join('property as p', 'v.propertyno', '=', 'p.propertyno')
+        ->leftJoin('staff as s', 'v.staffno', '=', 's.staffno')
+        ->where('v.renterno', $user->renterno)
+        ->select('v.*', 'p.street', 'p.city', 's.firstname as staff_fname', 's.lastname as staff_lname')
+        ->orderBy('v.view_date', 'desc')
+        ->get();
 
-        if ($user->renterno) {
-            $viewings = DB::table(
-                DB::raw("get_renter_viewings(CAST(:renterno AS TEXT)) as v")
-            )
-            ->setBindings(['renterno' => $user->renterno])
-            ->get();
-        }
-
-        return view('viewings', compact('viewings'));
-    }
-
+    return view('viewings', compact('viewings'));
+}
 public function store(Request $request)
 {
     $request->validate([
