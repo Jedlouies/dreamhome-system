@@ -27,6 +27,10 @@ Route::post('/staff/login', [StaffLoginController::class, 'login']);
 Route::middleware('auth:staff')->group(function () {
 
     Route::get('/staff/dashboard', [DashboardController::class, 'index'])->name('staff.dashboard');
+    Route::get('/staff/dashboard/report', [DashboardController::class, 'downloadReport'])
+        ->name('staff.dashboard.report');
+    Route::post('/staff/viewings/feedback', [DashboardController::class, 'updateViewingFeedback'])
+        ->name('staff.viewings.feedback');   
 
     // Staff list
     Route::get('/staff/staff-list',          [StaffProfileController::class, 'index'])->name('staff.staff');
@@ -35,7 +39,7 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/staff-list/{id}',     [StaffProfileController::class, 'show'])->name('staff.show');
     Route::get('/staff/staff-list/{id}/edit',[StaffProfileController::class, 'edit'])->name('staff.edit');
     Route::patch('/staff/staff-list/{id}',   [StaffProfileController::class, 'update'])->name('staff.update');
-
+    Route::get('/staff/leases',              [LeasesController::class, 'index'])->name('staff.leases.index');
     // Properties — Issue 2 fix: PropertiesController now imported
     Route::get('/staff/properties',           [PropertiesController::class, 'index'])->name('staff.properties.properties');
     Route::get('/staff/properties/create',    [PropertiesController::class, 'create'])->name('staff.properties.create');
@@ -102,6 +106,8 @@ Route::middleware('auth')->group(function () {
     // Issue 5 & 9 fix: viewings now uses ClientViewingsController
     Route::get('/viewings', [ClientViewingsController::class, 'index'])->name('viewings');
     Route::post('/viewings/book', [ClientViewingsController::class, 'store'])->name('viewings.book');
+
+    ;
 });
 
 require __DIR__.'/auth.php';
