@@ -1,7 +1,14 @@
 <x-app-layout>
     <style>[x-cloak] { display: none !important; }</style>
 
-    <div class="py-10 bg-[#F3F4F6] min-h-screen" x-data="{ showPaymentModal: false }">
+    {{-- Added Alpine pagination states: currentPage, itemsPerPage, and totalItems --}}
+    <div class="py-10 bg-[#F3F4F6] min-h-screen" 
+         x-data="{ 
+            showPaymentModal: false,
+            currentPage: 1,
+            itemsPerPage: 5,
+            totalItems: {{ count($schedule) }}
+         }">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
             {{-- Navigation & Title --}}
@@ -65,10 +72,16 @@
                             <div>
                                 <div class="flex justify-between text-[10px] font-black uppercase mb-2">
                                     <span class="text-slate-400">Total Coverage</span>
-                                    <span class="text-rose-500">{{ round(($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100) }}%</span>
+                                    <span class="text-rose-500">
+                                        @if($lease->monthly_rent * $lease->duration > 0)
+                                            {{ round(($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100) }}%
+                                        @else
+                                            0%
+                                        @endif
+                                    </span>
                                 </div>
                                 <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
-                                    <div class="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full" style="width: {{ ($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100 }}%"></div>
+                                    <div class="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full" style="width: {{ ($lease->monthly_rent * $lease->duration > 0) ? ($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100 : 0 }}%"></div>
                                 </div>
                             </div>
 
@@ -88,53 +101,129 @@
 
                 {{-- RIGHT COLUMN: Payment Schedule --}}
                 <div class="lg:col-span-2 space-y-6">
-                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
-                        <div class="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/30 gap-4">
-                            <div>
-                                <h3 class="text-lg font-black text-slate-900">Master Schedule</h3>
-                                <p class="text-xs font-bold text-slate-500 uppercase tracking-tighter">Month-by-Month Verification</p>
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden flex flex-col justify-between min-h-[520px]">
+                        
+                        <div>
+                            <div class="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/30 gap-4">
+                                <div>
+                                    <h3 class="text-lg font-black text-slate-900">Master Schedule</h3>
+                                    <p class="text-xs font-bold text-slate-500 uppercase tracking-tighter">Month-by-Month Verification</p>
+                                </div>
+                                <button @click="showPaymentModal = true" 
+                                        class="w-full sm:w-auto px-6 py-3 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 active:scale-95">
+                                    Record Manual Payment
+                                </button>
                             </div>
-                            <button @click="showPaymentModal = true" 
-                                    class="w-full sm:w-auto px-6 py-3 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 active:scale-95">
-                                Record Manual Payment
-                            </button>
-                        </div>
 
-                        <div class="divide-y divide-slate-50">
-                            @foreach($schedule as $item)
-                            <div class="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all">
-                                <div class="flex items-center gap-4">
-                                    <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center {{ $item['is_paid'] ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-50 text-rose-400' }}">
-                                        <span class="text-[10px] font-black uppercase leading-none">{{ substr($item['month'], 0, 3) }}</span>
-                                        <span class="text-xs font-black">{{ substr($item['month'], -2) }}</span>
+                            <div class="divide-y divide-slate-50">
+                                @foreach($schedule as $index => $item)
+                                {{-- Connected dynamic index matching variables via Alpine x-show visibility filters --}}
+                                <div class="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all"
+                                     x-show="{{ $index }} >= (currentPage - 1) * itemsPerPage && {{ $index }} < currentPage * itemsPerPage"
+                                     x-transition:enter="transition ease-out duration-200"
+                                     x-transition:enter-start="opacity-0 transform translate-y-1">
+                                    <div class="flex items-center gap-4">
+                                        <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center {{ $item['is_paid'] ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-50 text-rose-400' }}">
+                                            <span class="text-[10px] font-black uppercase leading-none">{{ substr($item['month'], 0, 3) }}</span>
+                                            <span class="text-xs font-black">{{ substr($item['month'], -2) }}</span>
+                                        </div>
+                                        <div>
+                                            <p class="text-sm font-black text-slate-900">{{ $item['month'] }}</p>
+                                            <p class="text-[10px] font-bold text-slate-400 uppercase">Due: {{ \Carbon\Carbon::parse($item['due_date'])->format('M d, Y') }}</p>
+                                        </div>
                                     </div>
-                                    <div>
-                                        <p class="text-sm font-black text-slate-900">{{ $item['month'] }}</p>
-                                        <p class="text-[10px] font-bold text-slate-400 uppercase">Due: {{ \Carbon\Carbon::parse($item['due_date'])->format('M d, Y') }}</p>
+
+                                    <div class="flex items-center gap-6">
+                                        @if($item['is_paid'])
+                                            <div class="text-right hidden sm:block">
+                                                @if($item['payment'])
+                                                    <p class="text-sm font-black text-emerald-600">₱{{ number_format($item['payment']->amount_paid, 2) }}</p>
+                                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                        {{ $item['payment']->payment_method }}
+                                                        @if(stripos($item['payment']->notes, 'Advance') !== false)
+                                                            <span class="text-[9px] text-amber-600 font-black block">(Advance Package)</span>
+                                                        @endif
+                                                    </p>
+                                                @else
+                                                    <p class="text-sm font-black text-emerald-600">₱{{ number_format($lease->monthly_rent, 2) }}</p>
+                                                    <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">Account Balance/Credit</p>
+                                                @endif
+                                            </div>
+                                            <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-100">
+                                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+                                            </div>
+                                        @else
+                                            <div class="text-right hidden sm:block">
+                                                <p class="text-sm font-black text-rose-400 italic">Unpaid</p>
+                                            </div>
+                                            <div class="w-10 h-10 rounded-full bg-white border-2 border-dashed border-rose-200 flex items-center justify-center text-rose-200">
+                                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                            </div>
+                                        @endif
                                     </div>
                                 </div>
+                                @endforeach
+                            </div>
+                        </div>
 
-                                <div class="flex items-center gap-6">
-                                    @if($item['is_paid'])
-                                        <div class="text-right hidden sm:block">
-                                            <p class="text-sm font-black text-emerald-600">₱{{ number_format($item['payment']->amount_paid, 2) }}</p>
-                                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{{ $item['payment']->payment_method }}</p>
-                                        </div>
-                                        <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-100">
-                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
-                                        </div>
-                                    @else
-                                        <div class="text-right hidden sm:block">
-                                            <p class="text-sm font-black text-rose-400 italic">Unpaid</p>
-                                        </div>
-                                        <div class="w-10 h-10 rounded-full bg-white border-2 border-dashed border-rose-200 flex items-center justify-center text-rose-200">
-                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        </div>
-                                    @endif
+                        {{-- PAGINATION CONTROL PANEL FOOTER --}}
+                        <div class="p-4 bg-slate-50/50 border-t border-slate-100 flex items-center justify-between sm:px-6">
+                            <div class="flex-1 flex justify-between sm:hidden">
+                                <button @click="if(currentPage > 1) currentPage--"
+                                        :disabled="currentPage === 1"
+                                        class="relative inline-flex items-center px-4 py-2 border border-slate-200 text-xs font-bold rounded-xl bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-all">
+                                    Previous
+                                </button>
+                                <button @click="if(currentPage * itemsPerPage < totalItems) currentPage++"
+                                        :disabled="currentPage * itemsPerPage >= totalItems"
+                                        class="ml-3 relative inline-flex items-center px-4 py-2 border border-slate-200 text-xs font-bold rounded-xl bg-white text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-all">
+                                    Next
+                                </button>
+                            </div>
+                            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                                <div>
+                                    <p class="text-xs font-bold text-slate-500">
+                                        Showing
+                                        <span class="font-black text-slate-800" x-text="((currentPage - 1) * itemsPerPage) + 1"></span>
+                                        to
+                                        <span class="font-black text-slate-800" x-text="Math.min(currentPage * itemsPerPage, totalItems)"></span>
+                                        of
+                                        <span class="font-black text-slate-800" x-text="totalItems"></span>
+                                        months
+                                    </p>
+                                </div>
+                                <div>
+                                    <nav class="relative z-0 inline-flex rounded-xl shadow-sm space-x-1" aria-label="Pagination">
+                                        <button @click="currentPage = 1"
+                                                :disabled="currentPage === 1"
+                                                class="relative inline-flex items-center px-2 py-2 rounded-l-xl border border-slate-200 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition-all">
+                                            <span class="sr-only">First</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7M17 19l-7-7 7-7"/></svg>
+                                        </button>
+                                        <button @click="if(currentPage > 1) currentPage--"
+                                                :disabled="currentPage === 1"
+                                                class="relative inline-flex items-center px-3 py-2 border border-slate-200 bg-white text-xs font-black text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all">
+                                            Prev
+                                        </button>
+                                        
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-slate-200 bg-rose-500 text-xs font-black text-white rounded-lg" x-text="currentPage"></span>
+
+                                        <button @click="if(currentPage * itemsPerPage < totalItems) currentPage++"
+                                                :disabled="currentPage * itemsPerPage >= totalItems"
+                                                class="relative inline-flex items-center px-3 py-2 border border-slate-200 bg-white text-xs font-black text-slate-600 hover:bg-slate-50 disabled:opacity-40 transition-all">
+                                            Next
+                                        </button>
+                                        <button @click="currentPage = Math.ceil(totalItems / itemsPerPage)"
+                                                :disabled="currentPage * itemsPerPage >= totalItems"
+                                                class="relative inline-flex items-center px-2 py-2 rounded-r-xl border border-slate-200 bg-white text-sm font-medium text-slate-500 hover:bg-slate-50 disabled:opacity-40 transition-all">
+                                            <span class="sr-only">Last</span>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 5l7 7-7 7M7 5l7 7-7 7"/></svg>
+                                        </button>
+                                    </nav>
                                 </div>
                             </div>
-                            @endforeach
                         </div>
+
                     </div>
                 </div>
             </div>
@@ -191,7 +280,7 @@
 
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Reference Notes</label>
-                        <textarea name="notes" rows="2" placeholder="e.g. Branch Walk-in"
+                        <textarea name="notes" rows="2" placeholder="e.g. Advance payment packages for 3 month(s)"
                                 class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-medium text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all"></textarea>
                     </div>
 
