@@ -234,7 +234,7 @@
             <form method="POST" action="{{ route('leases.support') }}">
                 @csrf
                 <div x-show="supportStep === 1" class="p-6 space-y-4">
-                    @if($branch)
+                    @if(isset($branch))
                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Branch Contact Info</p>
                         <div class="space-y-3">
@@ -516,26 +516,43 @@
                         {{-- ACTION BUTTONS --}}
                         <div class="space-y-3">
 
-                            {{-- PAY BUTTONS --}}
-                            @if($lease->payment_status !== 'PAID' && $lease->balance > 0)
+                        {{-- PAY BUTTONS --}}
+                        @php
+                            $hasPaidThisMonth = $next_due_date !== 'N/A' && 
+                                                $next_due_date !== 'Fully Paid' && 
+                                                \Carbon\Carbon::parse($next_due_date)->isAfter(now()->startOfMonth());
+                        @endphp
+
+                        @if($lease->payment_status !== 'PAID' && $lease->balance > 0)
                             <div class="grid grid-cols-2 gap-3">
-                                <button @click="payType = 'this_month'; payMonths = 1; payMethod = ''; showPayment = true"
-                                    class="flex items-center justify-center gap-2 py-3.5 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm shadow-pink-100">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
-                                    Pay This Month
-                                </button>
+                                {{-- Pay This Month Button --}}
+                                @if($hasPaidThisMonth)
+                                    <button type="button" disabled
+                                        class="flex items-center justify-center gap-2 py-3.5 bg-gray-200 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-not-allowed border border-gray-300">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        Paid for {{ now()->format('F') }}
+                                    </button>
+                                @else
+                                    <button @click="payType = 'this_month'; payMonths = 1; payMethod = ''; showPayment = true"
+                                        class="flex items-center justify-center gap-2 py-3.5 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm shadow-pink-100">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                        Pay This Month
+                                    </button>
+                                @endif
+
+                                {{-- Pay in Advance Button --}}
                                 <button @click="payType = 'advance'; payMonths = 2; payMethod = ''; showPayment = true"
                                     class="flex items-center justify-center gap-2 py-3.5 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#853953] active:scale-95 transition-all shadow-sm">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                     Pay in Advance
                                 </button>
                             </div>
-                            @else
+                        @else
                             <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
                                 <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                 <p class="text-xs font-black text-emerald-700">Your lease is fully paid — no outstanding balance!</p>
                             </div>
-                            @endif
+                        @endif
 
                             <div class="flex flex-wrap gap-3">
                                 <a href="{{ route('leases.pdf') }}"
@@ -612,6 +629,30 @@
 
                         <div class="border-t border-gray-50"></div>
 
+                        {{-- OVERDUE MONTHS BREAKDOWN (NEW) --}}
+                        @if(isset($overdue_months) && count($overdue_months) > 0)
+                        <div>
+                            <div class="flex items-center gap-2 mb-3">
+                                <div class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600">
+                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                </div>
+                                <span class="text-xs font-black uppercase tracking-wider text-red-600">Overdue Payments</span>
+                            </div>
+                            <div class="space-y-2">
+                                @foreach($overdue_months as $month)
+                                <div class="bg-red-50 border border-red-100 rounded-xl p-3 flex items-center justify-between">
+                                    <div>
+                                        <p class="text-[11px] font-black text-gray-900">{{ $month }}</p>
+                                        <p class="text-[9px] text-red-500 font-bold uppercase">Unpaid Period</p>
+                                    </div>
+                                    <p class="text-[11px] font-black text-red-600">&#8369;{{ number_format($lease->monthly_rent, 2) }}</p>
+                                </div>
+                                @endforeach
+                            </div>
+                        </div>
+                        <div class="border-t border-gray-50"></div>
+                        @endif
+
                         {{-- Next Payment --}}
                         <div>
                             <button @click="selectedSection = (selectedSection === 'upcoming' ? null : 'upcoming')"
@@ -640,7 +681,6 @@
                                         <div>
                                             <p class="text-xs font-black text-emerald-700">Fully Paid!</p>
                                             <p class="text-[10px] text-emerald-600/70 font-bold mt-0.5">No outstanding balance remaining.</p>
-                                            <p class="text-[10px] text-emerald-600/50 font-bold mt-0.5">Contract ends {{ \Carbon\Carbon::parse($lease->enddate)->format('M d, Y') }}</p>
                                         </div>
                                     </div>
                                 </div>
@@ -649,9 +689,7 @@
                                     <div class="flex items-start gap-3">
                                         <div class="w-2 h-2 rounded-full bg-[#853953] mt-1.5 shrink-0 animate-pulse"></div>
                                         <div>
-                                            <p class="text-xs font-black text-gray-900">
-                                                {{ \Carbon\Carbon::parse($lease->startdate)->addMonth()->format('M d, Y') }}
-                                            </p>
+                                            <p class="text-xs font-black text-gray-900">{{ $next_due_date }}</p>
                                             <p class="text-[10px] font-black text-[#853953] mt-0.5">&#8369;{{ number_format($lease->monthly_rent, 2) }}</p>
                                             <p class="text-[10px] text-gray-400 font-bold mt-1">Via {{ $lease->paymentmethod }}</p>
                                         </div>

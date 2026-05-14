@@ -1,62 +1,211 @@
 <x-app-layout>
-    <div class="py-12 bg-[#F3F4F6] min-h-screen">
-        <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
+    <style>[x-cloak] { display: none !important; }</style>
+
+    <div class="py-10 bg-[#F3F4F6] min-h-screen" x-data="{ showPaymentModal: false }">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+
+            {{-- Navigation & Title --}}
             <div class="flex items-center gap-4 mb-8">
-                <a href="{{ route('staff.leases.index') }}" class="p-3 bg-white rounded-2xl shadow-sm text-gray-400 hover:text-[#853953] transition-all">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 19l-7-7 7-7"/></svg>
+                <a href="{{ route('staff.leases.index') }}" class="p-2 bg-white rounded-xl shadow-sm hover:bg-rose-50 hover:text-rose-600 transition-all">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 </a>
-                <h1 class="text-3xl font-black text-gray-900 tracking-tight">Lease Baseline Breakdown</h1>
+                <div>
+                    <h1 class="text-2xl font-black text-slate-900 tracking-tight">Lease Baseline Breakdown</h1>
+                    <p class="text-xs font-bold text-rose-500 uppercase tracking-widest italic">Management View • {{ $lease->leaseno }}</p>
+                </div>
             </div>
 
-            <div class="flex flex-col lg:flex-row gap-8 items-start">
-                {{-- Lease Info --}}
-                <div class="flex-1 space-y-6">
-                    <div class="bg-white rounded-[2.5rem] p-10 shadow-sm border border-white">
-                        <h2 class="text-3xl font-black text-gray-900 tracking-tighter">{{ $lease->street }}</h2>
-                        <p class="text-xs text-gray-400 font-bold uppercase tracking-widest mb-8">{{ $lease->city }} | Agreement {{ $lease->leaseno }}</p>
-                        
-                        <div class="grid grid-cols-2 gap-4">
-                            <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center">
-                                <p class="text-[9px] font-black text-[#853953] uppercase mb-1">Contract Start</p>
-                                <p class="text-sm font-black text-gray-800">{{ \Carbon\Carbon::parse($lease->startdate)->format('F d, Y') }}</p>
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                
+                {{-- LEFT COLUMN --}}
+                <div class="lg:col-span-1 space-y-6">
+                    
+                    {{-- Renter & Property Summary Card --}}
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
+                        <div class="bg-slate-900 p-6 text-white relative">
+                            <div class="absolute top-0 right-0 p-4 opacity-10">
+                                <svg class="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path></svg>
                             </div>
-                            <div class="bg-gray-50 p-6 rounded-3xl border border-gray-100 text-center">
-                                <p class="text-[9px] font-black text-[#853953] uppercase mb-1">Contract End</p>
-                                <p class="text-sm font-black text-gray-800">{{ \Carbon\Carbon::parse($lease->enddate)->format('F d, Y') }}</p>
+                            <p class="text-[10px] font-black uppercase tracking-widest opacity-60">Primary Renter</p>
+                            <h2 class="text-xl font-black mt-1">{{ $lease->r_fname }} {{ $lease->r_lname }}</h2>
+                            <p class="text-xs font-medium opacity-80 mt-1">{{ $lease->r_phone ?? 'No contact number' }}</p>
+                        </div>
+                        <div class="p-6 space-y-4">
+                            <div class="flex items-start gap-3">
+                                <div class="p-2 bg-rose-50 rounded-lg text-rose-500">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest">Property Address</p>
+                                    <p class="text-sm font-bold text-slate-700 mt-1">{{ $lease->street }}</p>
+                                    <p class="text-xs text-slate-500">{{ $lease->area }}, {{ $lease->city }}</p>
+                                </div>
+                            </div>
+                            <div class="pt-4 border-t border-slate-50 grid grid-cols-2 gap-4">
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase">Monthly Rent</p>
+                                    <p class="text-sm font-black text-emerald-600">₱{{ number_format($lease->monthly_rent, 2) }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-[10px] font-black text-slate-400 uppercase">Security Deposit</p>
+                                    <p class="text-sm font-black text-rose-500">₱{{ number_format($lease->deposit, 2) }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Financial Health Card --}}
+                    <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
+                        <div class="flex items-center gap-2 mb-4">
+                            <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                            <h3 class="text-sm font-black text-slate-900 uppercase tracking-tight">Financial Status</h3>
+                        </div>
+                        
+                        <div class="space-y-4">
+                            <div>
+                                <div class="flex justify-between text-[10px] font-black uppercase mb-2">
+                                    <span class="text-slate-400">Total Coverage</span>
+                                    <span class="text-rose-500">{{ round(($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100) }}%</span>
+                                </div>
+                                <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
+                                    <div class="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full" style="width: {{ ($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100 }}%"></div>
+                                </div>
+                            </div>
+
+                            <div class="grid grid-cols-2 gap-4 pt-2">
+                                <div class="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+                                    <p class="text-[9px] font-black text-slate-400 uppercase">Total Paid</p>
+                                    <p class="text-sm font-black text-slate-900">₱{{ number_format($lease->total_paid, 2) }}</p>
+                                </div>
+                                <div class="bg-rose-50 p-3 rounded-2xl border border-rose-100">
+                                    <p class="text-[9px] font-black text-rose-400 uppercase">Remaining</p>
+                                    <p class="text-sm font-black text-rose-600">₱{{ number_format($lease->balance, 2) }}</p>
+                                </div>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                {{-- Timeline Sidebar --}}
-                <aside class="w-full lg:w-96 shrink-0 sticky top-6">
-                    <div class="bg-white rounded-[2.5rem] p-8 shadow-sm border border-white">
-                        <h3 class="text-xl font-black text-gray-800 tracking-tighter mb-6">Payment Schedule</h3>
-                        <div class="space-y-6 max-h-[600px] overflow-y-auto pr-2 custom-scrollbar">
+                {{-- RIGHT COLUMN: Payment Schedule --}}
+                <div class="lg:col-span-2 space-y-6">
+                    <div class="bg-white rounded-3xl shadow-xl border border-slate-100 overflow-hidden">
+                        <div class="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center bg-slate-50/30 gap-4">
+                            <div>
+                                <h3 class="text-lg font-black text-slate-900">Master Schedule</h3>
+                                <p class="text-xs font-bold text-slate-500 uppercase tracking-tighter">Month-by-Month Verification</p>
+                            </div>
+                            <button @click="showPaymentModal = true" 
+                                    class="w-full sm:w-auto px-6 py-3 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 active:scale-95">
+                                Record Manual Payment
+                            </button>
+                        </div>
+
+                        <div class="divide-y divide-slate-50">
                             @foreach($schedule as $item)
-                            <div class="relative pl-10 group">
-                                @if(!$loop->last)
-                                    <div class="absolute left-4 top-8 bottom-[-24px] w-0.5 bg-gray-100"></div>
-                                @endif
-                                <div class="absolute left-0 top-1 w-8 h-8 rounded-full flex items-center justify-center z-10 border-4 border-white
-                                    {{ $item['is_paid'] ? 'bg-emerald-500 text-white' : 'bg-gray-100 text-gray-400' }}">
-                                    @if($item['is_paid'])
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                                    @else
-                                        <div class="w-1.5 h-1.5 rounded-full bg-current"></div>
-                                    @endif
+                            <div class="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all">
+                                <div class="flex items-center gap-4">
+                                    <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center {{ $item['is_paid'] ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-50 text-rose-400' }}">
+                                        <span class="text-[10px] font-black uppercase leading-none">{{ substr($item['month'], 0, 3) }}</span>
+                                        <span class="text-xs font-black">{{ substr($item['month'], -2) }}</span>
+                                    </div>
+                                    <div>
+                                        <p class="text-sm font-black text-slate-900">{{ $item['month'] }}</p>
+                                        <p class="text-[10px] font-bold text-slate-400 uppercase">Due: {{ \Carbon\Carbon::parse($item['due_date'])->format('M d, Y') }}</p>
+                                    </div>
                                 </div>
-                                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100">
-                                    <p class="text-[11px] font-black text-gray-900 uppercase">{{ $item['month'] }}</p>
-                                    <p class="text-[9px] font-bold uppercase {{ $item['is_paid'] ? 'text-emerald-600' : 'text-pink-600' }}">
-                                        {{ $item['is_paid'] ? 'Paid ✓' : 'Payment Required' }}
-                                    </p>
+
+                                <div class="flex items-center gap-6">
+                                    @if($item['is_paid'])
+                                        <div class="text-right hidden sm:block">
+                                            <p class="text-sm font-black text-emerald-600">₱{{ number_format($item['payment']->amount_paid, 2) }}</p>
+                                            <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{{ $item['payment']->payment_method }}</p>
+                                        </div>
+                                        <div class="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center text-white shadow-lg shadow-emerald-100">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="3"><path d="M5 13l4 4L19 7"/></svg>
+                                        </div>
+                                    @else
+                                        <div class="text-right hidden sm:block">
+                                            <p class="text-sm font-black text-rose-400 italic">Unpaid</p>
+                                        </div>
+                                        <div class="w-10 h-10 rounded-full bg-white border-2 border-dashed border-rose-200 flex items-center justify-center text-rose-200">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        </div>
+                                    @endif
                                 </div>
                             </div>
                             @endforeach
                         </div>
                     </div>
-                </aside>
+                </div>
+            </div>
+        </div>
+
+        {{-- RECORD MANUAL PAYMENT MODAL --}}
+        <div x-show="showPaymentModal" 
+             x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+             x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+             x-cloak 
+             class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4">
+            
+            <div @click.away="showPaymentModal = false" 
+                 class="bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden transition-all border border-rose-100">
+                
+                <div class="bg-rose-500 p-8 text-white relative">
+                    <button @click="showPaymentModal = false" class="absolute top-6 right-6 p-2 bg-white/20 rounded-full hover:bg-white/40 transition-all">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                    <h3 class="text-2xl font-black tracking-tight">Manual Payment Record</h3>
+                    <p class="text-rose-100 text-xs font-bold uppercase tracking-widest mt-1">DreamHome Ledger Update</p>
+                </div>
+
+                <form action="{{ route('staff.leases.process_payment') }}" method="POST" class="p-8 space-y-6">
+                    @csrf
+                    <input type="hidden" name="leaseno" value="{{ $lease->leaseno }}">
+
+                    {{-- Amount --}}
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Amount Received (₱)</label>
+                        <div class="relative">
+                            <span class="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-300">₱</span>
+                            <input type="number" name="amount" step="0.01" value="{{ $lease->monthly_rent }}" required
+                                class="w-full pl-10 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-xl font-black text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all">
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Method</label>
+                            <select name="payment_method" required
+                                    class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all">
+                                <option value="Cash">Cash</option>
+                                <option value="Check">Check</option>
+                                <option value="Bank Transfer">Bank Transfer</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Date</label>
+                            <input type="date" name="payment_date" value="{{ date('Y-m-d') }}" required
+                                class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Reference Notes</label>
+                        <textarea name="notes" rows="2" placeholder="e.g. Branch Walk-in"
+                                class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-medium text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all"></textarea>
+                    </div>
+
+                    <div class="flex gap-3 pt-2">
+                        <button type="button" @click="showPaymentModal = false"
+                                class="flex-1 py-4 bg-slate-100 text-slate-600 text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-slate-200 transition-all">
+                            Cancel
+                        </button>
+                        <button type="submit" 
+                                class="flex-[2] py-4 bg-emerald-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl hover:bg-emerald-700 transition-all shadow-lg shadow-emerald-200">
+                            Confirm Payment
+                        </button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
