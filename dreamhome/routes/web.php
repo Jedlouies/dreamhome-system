@@ -76,7 +76,7 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/leases', [StaffLeasesController::class, 'index'])->name('staff.leases.index');
     Route::get('/staff/leases/create', [StaffLeasesController::class, 'create'])->name('staff.leases.create');
     Route::post('/staff/leases/store', [StaffLeasesController::class, 'store'])->name('staff.leases.store');
-    
+    Route::post('/staff/leases/payment', [StaffLeasesController::class, 'processPayment'])->name('staff.leases.process_payment');
     // Detailed View: Shows month-by-month breakdown
     Route::get('/staff/leases/{id}', [StaffLeasesController::class, 'show'])->name('staff.leases.show');
     
