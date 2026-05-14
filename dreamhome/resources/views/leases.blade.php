@@ -10,13 +10,71 @@
         payType: 'this_month',
         payMonths: 1,
         payMethod: '',
+        payNotes: '',
         monthlyRent: {{ $lease?->monthly_rent ?? 0 }},
+        leaseDuration: {{ $lease?->duration ?? 12 }},
+        remainingBalance: {{ $lease?->balance ?? 0 }},
+        leaseStartDate: '{{ $lease?->startdate ?? now()->tostring() }}',
+        
+        // Dynamic targets tracker array for advanced selections
+        selectedTargetMonths: [],
+
+        // Get list of all future schedule months that haven't been completed yet
+        get upcomingMonthsList() {
+            let list = [];
+            let start = new Date(this.leaseStartDate);
+            
+            // Generate standard sequence based on duration
+            for (let i = 0; i < this.leaseDuration; i++) {
+                let d = new Date(start.getFullYear(), start.getMonth() + i, 1);
+                let label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                list.push(label);
+            }
+            return list;
+        },
+
+        // Calculate maximum allowed months based on remaining financial liability
+        get maxMonths() {
+            if (this.monthlyRent <= 0) return this.leaseDuration;
+            let calculatedMonths = Math.ceil(this.remainingBalance / this.monthlyRent);
+            return Math.min(this.leaseDuration, calculatedMonths);
+        },
+
         get totalAmount() {
             return this.payType === 'this_month'
                 ? this.monthlyRent
                 : this.monthlyRent * this.payMonths;
+        },
+
+        // Watcher function to update selected targets automatically when the count changes
+        updateTargetMonths() {
+            // Find current month index to offset from
+            let now = new Date();
+            let currentLabel = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            let startIndex = this.upcomingMonthsList.indexOf(currentLabel);
+            if (startIndex === -1) startIndex = 0;
+
+            // Gather the next relative unpaid blocks matching the selected count
+            let targets = [];
+            let count = 0;
+            for (let i = startIndex; i < this.upcomingMonthsList.length; i++) {
+                if (count >= this.payMonths) break;
+                targets.push(this.upcomingMonthsList[i]);
+                count++;
+            }
+            this.selectedTargetMonths = targets;
+            this.syncNotesField();
+        },
+
+        syncNotesField() {
+            if (this.payType === 'this_month') {
+                this.payNotes = 'Rent statement for ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+            } else {
+                this.payNotes = 'Advance payment packages for: ' + this.selectedTargetMonths.join(', ');
+            }
         }
-     }">
+     }"
+     x-init="$watch('payMonths', value => updateTargetMonths()); $watch('payType', value => { payMonths = 1; updateTargetMonths(); })">
 
     {{-- ===== PAYMENT MODAL ===== --}}
     <div x-show="showPayment" x-cloak
@@ -24,16 +82,16 @@
          x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
          @click.self="showPayment = false"
          class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4">
-        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col"
              x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
 
             {{-- Header --}}
-            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5">
+            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5 shrink-0">
                 <div class="flex items-start justify-between mb-3">
                     <div>
                         <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Lease Payment</p>
                         <h3 class="text-white font-black text-lg tracking-tight mt-0.5"
-                            x-text="payType === 'this_month' ? 'Pay This Month' : 'Pay in Advance'"></h3>
+                            x-text="payType === 'this_month' ? 'Pay Selected Cycle' : 'Pay in Advance'"></h3>
                         <p class="text-pink-200/70 text-[11px] font-bold mt-0.5">Lease No. {{ $lease?->leaseno }}</p>
                     </div>
                     <button @click="showPayment = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all shrink-0">
@@ -56,14 +114,14 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('renter.payments.process') }}" class="p-6 space-y-4">
+            <form method="POST" action="{{ route('renter.payments.process') }}" class="p-6 space-y-4 overflow-y-auto flex-1">
                 @csrf
                 <input type="hidden" name="payment_type" :value="payType">
                 <input type="hidden" name="months" :value="payMonths">
 
-                {{-- Advance months selector --}}
-                <div x-show="payType === 'advance'" x-cloak>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">How many months to pay in advance?</label>
+                {{-- STEP 1: How many months to pay? --}}
+                <div x-show="payType === 'advance'" x-cloak class="space-y-2">
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400">1. How many months to pay in advance?</label>
                     <div class="flex items-center gap-3">
                         <button type="button" @click="payMonths = Math.max(1, payMonths - 1)"
                             class="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-black text-lg hover:bg-gray-200 transition-all flex items-center justify-center">−</button>
@@ -71,14 +129,29 @@
                             <span class="text-2xl font-black text-[#853953]" x-text="payMonths"></span>
                             <span class="text-sm text-gray-400 font-bold ml-1">month(s)</span>
                         </div>
-                        <button type="button" @click="payMonths = Math.min({{ $lease?->duration ?? 12 }}, payMonths + 1)"
+                        <button type="button" @click="payMonths = Math.min(maxMonths, payMonths + 1)"
                             class="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-black text-lg hover:bg-gray-200 transition-all flex items-center justify-center">+</button>
                     </div>
-                    <p class="text-[10px] text-gray-400 font-bold text-center mt-2">Max: {{ $lease?->duration ?? 12 }} months (lease duration)</p>
+                    <p class="text-[10px] text-gray-400 font-bold text-center mt-1">
+                        Max Allowed: <span x-text="maxMonths"></span> month(s) based on remaining balance
+                    </p>
+                </div>
+
+                {{-- STEP 2: Explicit target selection visualization mapping --}}
+                <div x-show="payType === 'advance'" x-cloak class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">2. Mapped Billing Cycles to be Paid:</label>
+                    <div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
+                        <template x-for="(month, index) in selectedTargetMonths" :key="index">
+                            <div class="flex items-center justify-between bg-white rounded-xl px-3 py-2 border border-gray-100 shadow-sm">
+                                <span class="text-xs font-black text-gray-800" x-text="month"></span>
+                                <span class="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg border border-emerald-100">Covered</span>
+                            </div>
+                        </template>
+                    </div>
                 </div>
 
                 {{-- Payment Method --}}
-                <div>
+                <div class="pt-2 border-t border-dashed border-gray-100">
                     <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Payment Method</label>
                     <div class="grid grid-cols-3 gap-2">
                         @foreach([
@@ -118,15 +191,15 @@
                     </div>
                 </div>
 
-                {{-- Notes --}}
+                {{-- Notes Statement System --}}
                 <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Notes <span class="text-gray-300 normal-case font-medium">(optional)</span></label>
-                    <input type="text" name="notes" placeholder="e.g. January 2026 rent"
-                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Description Statement Log</label>
+                    <input type="text" name="notes" x-model="payNotes" readonly
+                        class="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-500 font-bold focus:outline-none cursor-not-allowed">
                 </div>
 
                 {{-- Buttons --}}
-                <div class="flex gap-3 pt-1">
+                <div class="flex gap-3 pt-1 sticky bottom-0 bg-white">
                     <button type="button" @click="showPayment = false"
                         class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
                         Cancel
@@ -198,7 +271,7 @@
         </div>
     </div>
 
-    {{-- ===== CONTACT SUPPORT MODAL (2-STEP) ===== --}}
+    {{-- ===== CONTACT SUPPORT MODAL ===== --}}
     <div x-show="showSupport" x-cloak
         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
@@ -463,7 +536,7 @@
                                     <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Deposit Paid</p>
                                     @if($lease->isdepositpaid)
                                         <span class="inline-flex items-center gap-1.5 text-emerald-600 font-black text-sm">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></span >
                                             Yes — Paid
                                         </span>
                                     @else
@@ -517,23 +590,17 @@
                         <div class="space-y-3">
 
                         {{-- PAY BUTTONS --}}
-                        @php
-                            $hasPaidThisMonth = $next_due_date !== 'N/A' && 
-                                                $next_due_date !== 'Fully Paid' && 
-                                                \Carbon\Carbon::parse($next_due_date)->isAfter(now()->startOfMonth());
-                        @endphp
-
                         @if($lease->payment_status !== 'PAID' && $lease->balance > 0)
                             <div class="grid grid-cols-2 gap-3">
                                 {{-- Pay This Month Button --}}
                                 @if($hasPaidThisMonth)
                                     <button type="button" disabled
-                                        class="flex items-center justify-center gap-2 py-3.5 bg-gray-200 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-not-allowed border border-gray-300">
-                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                                        class="flex items-center justify-center gap-2 py-3.5 bg-gray-100 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest cursor-not-allowed border border-gray-200">
+                                        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
                                         Paid for {{ now()->format('F') }}
                                     </button>
                                 @else
-                                    <button @click="payType = 'this_month'; payMonths = 1; payMethod = ''; showPayment = true"
+                                    <button @click="payType = 'this_month'; payMethod = ''; payNotes = 'Rent statement for ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' }); showPayment = true"
                                         class="flex items-center justify-center gap-2 py-3.5 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm shadow-pink-100">
                                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
                                         Pay This Month
@@ -541,7 +608,7 @@
                                 @endif
 
                                 {{-- Pay in Advance Button --}}
-                                <button @click="payType = 'advance'; payMonths = 2; payMethod = ''; showPayment = true"
+                                <button @click="payType = 'advance'; showPayment = true"
                                     class="flex items-center justify-center gap-2 py-3.5 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#853953] active:scale-95 transition-all shadow-sm">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
                                     Pay in Advance
@@ -629,23 +696,29 @@
 
                         <div class="border-t border-gray-50"></div>
 
-                        {{-- OVERDUE MONTHS BREAKDOWN (NEW) --}}
+                        {{-- OVERDUE MONTHS BREAKDOWN --}}
                         @if(isset($overdue_months) && count($overdue_months) > 0)
                         <div>
                             <div class="flex items-center gap-2 mb-3">
                                 <div class="w-6 h-6 rounded-full bg-red-100 flex items-center justify-center text-red-600">
                                     <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                </div>
-                                <span class="text-xs font-black uppercase tracking-wider text-red-600">Overdue Payments</span>
+                                endforeach
                             </div>
-                            <div class="space-y-2">
+                            <div class="space-y-2.5">
                                 @foreach($overdue_months as $month)
-                                <div class="bg-red-50 border border-red-100 rounded-xl p-3 flex items-center justify-between">
-                                    <div>
-                                        <p class="text-[11px] font-black text-gray-900">{{ $month }}</p>
-                                        <p class="text-[9px] text-red-500 font-bold uppercase">Unpaid Period</p>
+                                <div class="bg-red-50 border border-red-100 rounded-xl p-3 flex flex-col gap-2">
+                                    <div class="flex items-center justify-between">
+                                        <div>
+                                            <p class="text-[11px] font-black text-gray-900">{{ $month }}</p>
+                                            <p class="text-[9px] text-red-500 font-bold uppercase">Unpaid Period</p>
+                                        </div>
+                                        <p class="text-[11px] font-black text-red-600">&#8369;{{ number_format($lease->monthly_rent, 2) }}</p>
                                     </div>
-                                    <p class="text-[11px] font-black text-red-600">&#8369;{{ number_format($lease->monthly_rent, 2) }}</p>
+                                    <button type="button" 
+                                            @click="payType = 'this_month'; payMethod = ''; payNotes = 'Overdue rent payment for ' + '{{ $month }}'; showPayment = true"
+                                            class="w-full py-1.5 bg-red-600 hover:bg-red-700 text-white rounded-lg text-[10px] font-black uppercase tracking-wider transition-colors duration-150 text-center shadow-sm">
+                                        Pay Now
+                                    </button>
                                 </div>
                                 @endforeach
                             </div>

@@ -117,14 +117,11 @@ class StaffLeasesController extends Controller
 
         if (!$lease) abort(404);
 
-        // Fetch all payments for this lease and index them by Month Year
+        // Fetch all payments unmapped so we can iterate and dynamically filter them
         $payments = DB::table('payment')
             ->where('leaseno', $id)
             ->orderBy('payment_date', 'asc')
-            ->get()
-            ->mapWithKeys(function ($p) {
-                return [Carbon::parse($p->payment_date)->format('F Y') => $p];
-            });
+            ->get();
 
         // Generate the expected payment schedule based on lease duration
         $start = Carbon::parse($lease->startdate)->startOfMonth();
@@ -133,11 +130,26 @@ class StaffLeasesController extends Controller
 
         $schedule = [];
         foreach ($periods as $date) {
-            $monthKey = $date->format('F Y');
+            $monthLabel = $date->format('F Y');
+
+            // STAFF ENGINE REALIGNMENT: Check strings inside notes OR fallback to matching calendar timestamps
+            $matchingPayment = $payments->first(function ($payment) use ($date, $monthLabel) {
+                // Check 1: Did the renter or staff target this month directly inside the text log?
+                if (!empty($payment->notes) && stripos($payment->notes, $monthLabel) !== false) {
+                    return true;
+                }
+
+                // Check 2: Fallback natural check—did the transaction occur directly within this calendar month window?
+                $payDate = Carbon::parse($payment->payment_date);
+                $periodStart = $date->copy()->startOfMonth()->startOfDay();
+                $periodEnd = $date->copy()->endOfMonth()->endOfDay();
+                return $payDate->between($periodStart, $periodEnd);
+            });
+
             $schedule[] = [
-                'month'   => $monthKey,
-                'is_paid' => isset($payments[$monthKey]),
-                'payment' => $payments[$monthKey] ?? null,
+                'month'   => $monthLabel,
+                'is_paid' => !is_null($matchingPayment),
+                'payment' => $matchingPayment,
                 'due_date'=> $date->copy()->day(1)->format('Y-m-d')
             ];
         }
@@ -161,15 +173,17 @@ class StaffLeasesController extends Controller
 
         $paymentId = 'PAY-' . strtoupper(uniqid());
 
-        // We use the database procedure if it exists, or direct insert
-        // Using direct insert here to match your logic for month-by-month tracking
+        // Automatically append the targeted month name into the notes if staff inputs it
+        // This ensures the custom-string matching engine registers it flawlessly.
+        $notes = $request->notes ?? 'Manual staff entry';
+
         DB::table('payment')->insert([
             'paymentid'      => $paymentId,
             'leaseno'        => $request->leaseno,
             'payment_date'   => $request->payment_date,
             'amount_paid'    => $request->amount,
             'payment_method' => $request->payment_method,
-            'notes'          => $request->notes ?? 'Manual staff entry',
+            'notes'          => $notes,
         ]);
 
         return back()->with('success', "Payment {$paymentId} has been recorded.");

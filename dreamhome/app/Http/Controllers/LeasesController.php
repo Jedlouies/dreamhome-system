@@ -12,9 +12,6 @@ class LeasesController extends Controller
 {
     // ===== SHARED DATA FETCHING =====
 
-    /**
-     * Retrieves the primary lease record with property, staff, and renter details.
-     */
     private function fetchLease($renterno)
     {
         return DB::table('lease_agreement as la')
@@ -23,27 +20,11 @@ class LeasesController extends Controller
             ->join('renter as r',   'la.renterno',   '=', 'r.renterno')
             ->where('la.renterno', $renterno)
             ->select(
-                'la.leaseno',
-                'la.propertyno',
-                'la.renterno',
-                'la.staffno',
-                'la.monthly_rent',
-                'la.paymentmethod',
-                'la.deposit',
-                'la.isdepositpaid',
-                'la.startdate',
-                'la.enddate',
-                'la.duration',
-                'la.total_paid',
-                'la.balance',
-                'la.payment_status',
-                'la.is_overdue',
-                'p.street',
-                'p.area',
-                'p.city',
-                'p.postcode',
-                'p.property_type',
-                'p.no_of_rooms',
+                'la.leaseno', 'la.propertyno', 'la.renterno', 'la.staffno',
+                'la.monthly_rent', 'la.paymentmethod', 'la.deposit', 'la.isdepositpaid',
+                'la.startdate', 'la.enddate', 'la.duration', 'la.total_paid',
+                'la.balance', 'la.payment_status', 'la.is_overdue',
+                'p.street', 'p.area', 'p.city', 'p.postcode', 'p.property_type', 'p.no_of_rooms',
                 DB::raw("s.firstname || ' ' || s.lastname as staff_name"),
                 DB::raw("r.firstname || ' ' || r.lastname as renter_name")
             )
@@ -51,9 +32,6 @@ class LeasesController extends Controller
             ->first();
     }
 
-    /**
-     * Retrieves the history of payments for a specific lease.
-     */
     private function fetchPayments($leaseno)
     {
         return DB::table('payment')
@@ -63,9 +41,6 @@ class LeasesController extends Controller
             ->get();
     }
 
-    /**
-     * Calculates the percentage of time elapsed in the lease term.
-     */
     private function calcProgress($lease)
     {
         $start   = strtotime($lease->startdate);
@@ -82,15 +57,16 @@ class LeasesController extends Controller
     {
         $user = Auth::user();
 
-        // Safety check if user is not associated with a renter profile
         if (!$user->renterno) {
             return view('leases', [
-                'lease'          => null,
-                'payments'       => collect(),
-                'progress'       => 0,
-                'branch'         => DB::table('branch')->where('branchno', 'B001')->first(),
-                'next_due_date'  => 'N/A',
-                'overdue_months' => []
+                'lease'            => null,
+                'payments'         => collect(),
+                'progress'         => 0,
+                'branch'           => DB::table('branch')->where('branchno', 'B001')->first(),
+                'next_due_date'    => 'N/A',
+                'overdue_months'   => [],
+                'hasPaidThisMonth' => false,
+                'unpaid_months'    => []
             ]);
         }
 
@@ -99,70 +75,71 @@ class LeasesController extends Controller
         $progress = $lease ? $this->calcProgress($lease) : 0;
         $branch   = DB::table('branch')->where('branchno', 'B001')->first();
 
-        // CALCULATION: Identify the next required payment month & pinpoint overdue months
         $next_due_date = 'N/A';
         $overdue_months = [];
+        $unpaid_months = [];
+        $hasPaidThisMonth = false;
 
         if ($lease) {
             if ($lease->balance <= 0 || $lease->payment_status === 'PAID') {
                 $next_due_date = 'Fully Paid';
             } else {
-                $latestPayment = $payments->first();
+                $leaseStart = Carbon::parse($lease->startdate)->startOfDay();
+                $leaseEnd   = Carbon::parse($lease->enddate)->endOfDay();
+                $today      = Carbon::now()->startOfDay();
+                $currentMonthLabel = Carbon::now()->format('F Y');
 
-                if ($latestPayment) {
-                    // Advance 1 month from the last recorded payment
-                    $next_due_date = Carbon::parse($latestPayment->payment_date)
-                        ->addMonth()
-                        ->startOfMonth()
-                        ->format('M d, Y');
-                } else {
-                    // If no payments exist, the first month of the lease is due
-                    $next_due_date = Carbon::parse($lease->startdate)
-                        ->startOfMonth()
-                        ->format('M d, Y');
-                }
+                $currentPeriod = $leaseStart->copy();
+                $firstUnpaidDate = null;
 
-                // Check if the calculated due date exceeds the lease end date
-                if (Carbon::parse($next_due_date)->gt(Carbon::parse($lease->enddate))) {
-                    $next_due_date = 'Term Completed';
-                }
+                // CHRONOLOGICAL LOOK-AHEAD SEQUENCER ENGINE
+                while ($currentPeriod->isBefore($leaseEnd)) {
+                    $monthLabel = $currentPeriod->format('F Y');
 
-                // ===== ADDED: PAST MONTHS OVERDUE VERIFICATION ENGINE =====
-                if ($lease->is_overdue || $lease->balance > 0) {
-                    $currentPeriod = Carbon::parse($lease->startdate)->startOfDay();
-                    $today         = Carbon::now()->startOfDay();
-
-                    // Loop monthly from lease start date up until today's current month
-                    while ($currentPeriod->isBefore($today)) {
-                        $periodStart = $currentPeriod->copy()->startOfMonth()->startOfDay();
-                        $periodEnd   = $currentPeriod->copy()->endOfMonth()->endOfDay();
-
-                        // Look through successful payments to find any that match this month cycle window
-                        $isPaidForPeriod = $payments->contains(function ($payment) use ($periodStart, $periodEnd) {
-                            $payDate = Carbon::parse($payment->payment_date);
-                            return $payDate->between($periodStart, $periodEnd);
-                        });
-
-                        // If no matching payment was assigned to this monthly cycle, tag it as overdue
-                        if (!$isPaidForPeriod) {
-                            $overdue_months[] = $currentPeriod->format('F Y');
+                    $isPaidForPeriod = $payments->contains(function ($payment) use ($currentPeriod, $monthLabel) {
+                        if (!empty($payment->notes) && stripos($payment->notes, $monthLabel) !== false) {
+                            return true;
                         }
 
-                        // Progress engine step to next billing cycle month
-                        $currentPeriod->addMonth();
+                        $payDate     = Carbon::parse($payment->payment_date);
+                        $periodStart = $currentPeriod->copy()->startOfMonth()->startOfDay();
+                        $periodEnd   = $currentPeriod->copy()->endOfMonth()->endOfDay();
+                        return $payDate->between($periodStart, $periodEnd);
+                    });
+
+                    // Track explicitly if this current calendar month has been marked paid
+                    if ($monthLabel === $currentMonthLabel && $isPaidForPeriod) {
+                        $hasPaidThisMonth = true;
                     }
+
+                    if (!$isPaidForPeriod) {
+                        $unpaid_months[] = $monthLabel;
+
+                        if (is_null($firstUnpaidDate)) {
+                            $firstUnpaidDate = $currentPeriod->copy()->startOfMonth();
+                        }
+
+                        if ($currentPeriod->isBefore($today)) {
+                            $overdue_months[] = $monthLabel;
+                        }
+                    }
+
+                    $currentPeriod->addMonth();
+                }
+
+                if ($firstUnpaidDate) {
+                    $next_due_date = $firstUnpaidDate->format('M d, Y');
+                } else {
+                    $next_due_date = 'Term Completed';
                 }
             }
         }
 
-        return view('leases', compact('lease', 'payments', 'progress', 'branch', 'next_due_date', 'overdue_months'));
+        return view('leases', compact('lease', 'payments', 'progress', 'branch', 'next_due_date', 'overdue_months', 'hasPaidThisMonth', 'unpaid_months'));
     }
 
     // ===== ACTIONS & TRANSACTIONS =====
 
-    /**
-     * Processes a new payment using a stored procedure.
-     */
     public function processPayment(Request $request)
     {
         $request->validate([
@@ -184,13 +161,13 @@ class LeasesController extends Controller
         $amountPaid = min($lease->monthly_rent * $months, $lease->balance);
 
         $paymentId = 'PAY' . strtoupper(uniqid());
-        $notes     = $request->notes ?: ($months === 1 ? 'Standard monthly rent' : "Advance payment for {$months} months");
+        
+        $notes = $request->notes ?: ($months === 1 ? 'Standard monthly rent' : "Advance payment for {$months} months");
         
         if ($request->reference_no && $request->payment_method !== 'Cash') {
             $notes .= ' | Ref: ' . $request->reference_no;
         }
 
-        // Execute procedural database update
         DB::statement("CALL insert_payment(
             CAST(:paymentid AS TEXT),
             CAST(:leaseno AS TEXT),
@@ -208,9 +185,6 @@ class LeasesController extends Controller
         return back()->with('payment_success', "Payment of ₱" . number_format($amountPaid, 2) . " has been successfully recorded.");
     }
 
-    /**
-     * Generates a PDF version of the lease agreement.
-     */
     public function downloadPdf()
     {
         $user = Auth::user();
@@ -226,9 +200,6 @@ class LeasesController extends Controller
         return $pdf->download('Lease_Agreement_' . $lease->leaseno . '.pdf');
     }
 
-    /**
-     * Submits a renewal request to the database.
-     */
     public function requestRenewal(Request $request)
     {
         $request->validate(['reason' => 'required|string', 'message' => 'nullable|string|max:500']);
@@ -248,9 +219,6 @@ class LeasesController extends Controller
         return back()->with('renewal_success', 'Your renewal request is now pending review.');
     }
 
-    /**
-     * Creates a support ticket for maintenance or billing issues.
-     */
     public function contactSupport(Request $request)
     {
         $request->validate(['issue_type' => 'required|string', 'message' => 'required|string|max:500']);
