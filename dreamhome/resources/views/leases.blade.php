@@ -5,8 +5,144 @@
      x-data="{
         selectedSection: 'upcoming',
         showRenewal: false,
-        showSupport: false
+        showSupport: false,
+        showPayment: false,
+        payType: 'this_month',
+        payMonths: 1,
+        payMethod: '',
+        monthlyRent: {{ $lease?->monthly_rent ?? 0 }},
+        get totalAmount() {
+            return this.payType === 'this_month'
+                ? this.monthlyRent
+                : this.monthlyRent * this.payMonths;
+        }
      }">
+
+    {{-- ===== PAYMENT MODAL ===== --}}
+    <div x-show="showPayment" x-cloak
+         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+         @click.self="showPayment = false"
+         class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+        <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
+             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+
+            {{-- Header --}}
+            <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5">
+                <div class="flex items-start justify-between mb-3">
+                    <div>
+                        <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Lease Payment</p>
+                        <h3 class="text-white font-black text-lg tracking-tight mt-0.5"
+                            x-text="payType === 'this_month' ? 'Pay This Month' : 'Pay in Advance'"></h3>
+                        <p class="text-pink-200/70 text-[11px] font-bold mt-0.5">Lease No. {{ $lease?->leaseno }}</p>
+                    </div>
+                    <button @click="showPayment = false" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                {{-- Amount Summary --}}
+                <div class="bg-white/10 rounded-2xl px-5 py-4 border border-white/20">
+                    <div class="flex items-center justify-between">
+                        <div>
+                            <p class="text-[10px] font-black text-pink-200 uppercase tracking-widest">Total Amount Due</p>
+                            <p class="text-3xl font-black text-white mt-0.5">&#8369;<span x-text="totalAmount.toLocaleString('en-PH', {minimumFractionDigits: 2, maximumFractionDigits: 2})"></span></p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-[10px] font-black text-pink-200 uppercase tracking-widest">Monthly Rate</p>
+                            <p class="text-sm font-black text-white mt-0.5">&#8369;{{ number_format($lease?->monthly_rent, 2) }}</p>
+                            <p x-show="payType === 'advance'" class="text-[10px] text-pink-200/70 font-bold mt-0.5">× <span x-text="payMonths"></span> month(s)</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <form method="POST" action="{{ route('renter.payments.process') }}" class="p-6 space-y-4">
+                @csrf
+                <input type="hidden" name="payment_type" :value="payType">
+                <input type="hidden" name="months" :value="payMonths">
+
+                {{-- Advance months selector --}}
+                <div x-show="payType === 'advance'" x-cloak>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">How many months to pay in advance?</label>
+                    <div class="flex items-center gap-3">
+                        <button type="button" @click="payMonths = Math.max(1, payMonths - 1)"
+                            class="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-black text-lg hover:bg-gray-200 transition-all flex items-center justify-center">−</button>
+                        <div class="flex-1 text-center bg-pink-50 rounded-xl py-2.5 border border-pink-100">
+                            <span class="text-2xl font-black text-[#853953]" x-text="payMonths"></span>
+                            <span class="text-sm text-gray-400 font-bold ml-1">month(s)</span>
+                        </div>
+                        <button type="button" @click="payMonths = Math.min({{ $lease?->duration ?? 12 }}, payMonths + 1)"
+                            class="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-black text-lg hover:bg-gray-200 transition-all flex items-center justify-center">+</button>
+                    </div>
+                    <p class="text-[10px] text-gray-400 font-bold text-center mt-2">Max: {{ $lease?->duration ?? 12 }} months (lease duration)</p>
+                </div>
+
+                {{-- Payment Method --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Payment Method</label>
+                    <div class="grid grid-cols-3 gap-2">
+                        @foreach([
+                            ['value' => 'GCash',     'label' => 'GCash',     'sub' => 'E-Wallet', 'bg' => '#007DFF', 'initial' => 'G'],
+                            ['value' => 'Maya',      'label' => 'Maya',      'sub' => 'E-Wallet', 'bg' => '#0077B6', 'initial' => 'M'],
+                            ['value' => 'BPI',       'label' => 'BPI',       'sub' => 'Bank',     'bg' => '#C41E3A', 'initial' => 'BPI'],
+                            ['value' => 'BDO',       'label' => 'BDO',       'sub' => 'Bank',     'bg' => '#003087', 'initial' => 'BDO'],
+                            ['value' => 'UnionBank',  'label' => 'UnionBank', 'sub' => 'Bank',     'bg' => '#E8600A', 'initial' => 'UB'],
+                            ['value' => 'Cash',      'label' => 'Cash',      'sub' => 'Counter',  'bg' => '#059669', 'initial' => '₱'],
+                        ] as $method)
+                        <label class="cursor-pointer">
+                            <input type="radio" name="payment_method" value="{{ $method['value'] }}" x-model="payMethod" class="sr-only" required>
+                            <div :class="payMethod === '{{ $method['value'] }}' ? 'ring-2 ring-[#853953] border-[#853953] bg-pink-50' : 'border-gray-200 hover:border-gray-300'"
+                                 class="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all text-center">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-[9px]"
+                                     style="background: {{ $method['bg'] }}">{{ $method['initial'] }}</div>
+                                <p class="text-[10px] font-black text-gray-800 leading-tight">{{ $method['label'] }}</p>
+                                <p class="text-[9px] text-gray-400 font-bold leading-none">{{ $method['sub'] }}</p>
+                            </div>
+                        </label>
+                        @endforeach
+                    </div>
+                </div>
+
+                {{-- Reference number (hidden for Cash) --}}
+                <div x-show="payMethod && payMethod !== 'Cash'" x-cloak>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Reference Number</label>
+                    <input type="text" name="reference_no" placeholder="e.g. 1234567890"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                </div>
+
+                {{-- Cash note --}}
+                <div x-show="payMethod === 'Cash'" x-cloak>
+                    <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 flex items-start gap-2">
+                        <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <p class="text-[11px] font-bold text-amber-700">Please bring exact amount to the DreamHome branch office. Staff will record your payment on site.</p>
+                    </div>
+                </div>
+
+                {{-- Notes --}}
+                <div>
+                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Notes <span class="text-gray-300 normal-case font-medium">(optional)</span></label>
+                    <input type="text" name="notes" placeholder="e.g. January 2026 rent"
+                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                </div>
+
+                {{-- Buttons --}}
+                <div class="flex gap-3 pt-1">
+                    <button type="button" @click="showPayment = false"
+                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                        Cancel
+                    </button>
+                    <button type="submit" x-show="payMethod" x-cloak
+                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
+                        Confirm Payment
+                    </button>
+                    <div x-show="!payMethod"
+                        class="flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest text-center cursor-not-allowed">
+                        Select Method
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
     {{-- ===== RENEWAL MODAL ===== --}}
     <div x-show="showRenewal" x-cloak
@@ -16,7 +152,6 @@
          class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
              x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
-            {{-- Header --}}
             <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5 flex items-start justify-between">
                 <div>
                     <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Lease Request</p>
@@ -27,18 +162,16 @@
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                 </button>
             </div>
-            {{-- Form --}}
             <form method="POST" action="{{ route('leases.renewal') }}" class="p-6 space-y-4">
                 @csrf
-                {{-- Reason --}}
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Reason for Renewal</label>
                     <div class="space-y-2">
                         @foreach([
-                            'Contract Expired'        => 'My lease contract has ended and I wish to continue.',
-                            'Extension Needed'        => 'I need more time before moving out.',
-                            'Long-term Stay Planned'  => 'I plan to stay for a longer period.',
-                            'Other'                   => 'Other reason (please specify below).',
+                            'Contract Expired'       => 'My lease contract has ended and I wish to continue.',
+                            'Extension Needed'       => 'I need more time before moving out.',
+                            'Long-term Stay Planned' => 'I plan to stay for a longer period.',
+                            'Other'                  => 'Other reason (please specify below).',
                         ] as $value => $description)
                         <label class="flex items-start gap-3 p-3 rounded-xl border border-gray-200 cursor-pointer hover:border-[#853953]/30 hover:bg-pink-50/50 transition-all has-[:checked]:border-[#853953] has-[:checked]:bg-pink-50">
                             <input type="radio" name="reason" value="{{ $value }}" class="mt-0.5 accent-[#853953] shrink-0" required>
@@ -50,22 +183,16 @@
                         @endforeach
                     </div>
                 </div>
-                {{-- Message --}}
                 <div>
                     <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Additional Message <span class="text-gray-300 normal-case font-medium">(optional)</span></label>
                     <textarea name="message" rows="3" placeholder="Add any details about your renewal request..."
                         class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
                 </div>
-                {{-- Buttons --}}
                 <div class="flex gap-3 pt-1">
                     <button type="button" @click="showRenewal = false"
-                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
-                        Cancel
-                    </button>
+                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">Cancel</button>
                     <button type="submit"
-                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all">
-                        Submit Request
-                    </button>
+                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all">Submit Request</button>
                 </div>
             </form>
         </div>
@@ -80,20 +207,16 @@
         x-data="{ supportStep: 1 }">
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden"
             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
-
-            {{-- Header --}}
             <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5">
                 <div class="flex items-start justify-between mb-4">
                     <div>
                         <p class="text-[10px] font-black text-pink-200 uppercase tracking-[0.2em]">Help & Support</p>
                         <h3 class="text-white font-black text-lg tracking-tight mt-0.5">Contact Support</h3>
-                        <p class="text-pink-200/70 text-[11px] font-bold mt-0.5">We'll respond as soon as possible</p>
                     </div>
                     <button @click="showSupport = false; supportStep = 1" class="w-8 h-8 rounded-xl bg-white/20 flex items-center justify-center text-white hover:bg-white/30 transition-all shrink-0">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-                {{-- Step Indicator --}}
                 <div class="flex items-center gap-2">
                     <div class="flex items-center gap-1.5">
                         <div class="w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black transition-all"
@@ -108,14 +231,9 @@
                     </div>
                 </div>
             </div>
-
             <form method="POST" action="{{ route('leases.support') }}">
                 @csrf
-
-                {{-- ===== STEP 1: Branch Info ===== --}}
                 <div x-show="supportStep === 1" class="p-6 space-y-4">
-
-                    {{-- Branch Info Card --}}
                     @if($branch)
                     <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                         <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-3">Branch Contact Info</p>
@@ -135,32 +253,16 @@
                                 </div>
                                 <div>
                                     <p class="text-[10px] text-gray-400 font-bold">Address</p>
-                                    <p class="text-sm font-black text-gray-900">{{ $branch->street }}, {{ $branch->area }}</p>
-                                    <p class="text-xs text-gray-400 font-bold">{{ $branch->city }}</p>
+                                    <p class="text-sm font-black text-gray-900">{{ $branch->street }}, {{ $branch->area }}, {{ $branch->city }}</p>
                                 </div>
                             </div>
-                            @if(isset($branch->faxno))
-                            <div class="flex items-center gap-3">
-                                <div class="w-8 h-8 bg-[#853953]/10 rounded-lg flex items-center justify-center shrink-0">
-                                    <svg class="w-4 h-4 text-[#853953]" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
-                                </div>
-                                <div>
-                                    <p class="text-[10px] text-gray-400 font-bold">Fax</p>
-                                    <p class="text-sm font-black text-gray-900">{{ $branch->faxno }}</p>
-                                </div>
-                            </div>
-                            @endif
                         </div>
                     </div>
                     @endif
-
                     <p class="text-xs text-gray-400 font-medium text-center">You can call us directly or submit a support ticket below.</p>
-
                     <div class="flex gap-3 pt-1">
                         <button type="button" @click="showSupport = false; supportStep = 1"
-                            class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
-                            Cancel
-                        </button>
+                            class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">Cancel</button>
                         <button type="button" @click="supportStep = 2"
                             class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all flex items-center justify-center gap-2">
                             Submit Ticket
@@ -168,17 +270,13 @@
                         </button>
                     </div>
                 </div>
-
-                {{-- ===== STEP 2: Issue Form ===== --}}
                 <div x-show="supportStep === 2" class="p-6 space-y-4">
-
-                    {{-- Issue Type --}}
                     <div>
                         <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">What is your issue?</label>
                         <div class="space-y-2">
                             @foreach([
                                 'Billing Issue'        => 'Problem with payment records or running balance.',
-                                'Property Maintenance' => 'Something in the property needs repair or attention.',
+                                'Property Maintenance' => 'Something in the property needs repair.',
                                 'Lease Inquiry'        => 'Questions about my lease terms or contract.',
                                 'Payment Problem'      => 'Having trouble making or recording a payment.',
                                 'Other'                => 'Something else not listed above.',
@@ -193,14 +291,11 @@
                             @endforeach
                         </div>
                     </div>
-
-                    {{-- Message --}}
                     <div>
                         <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Describe Your Issue</label>
                         <textarea name="message" rows="3" placeholder="Please describe the issue in detail..." required
                             class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all resize-none"></textarea>
                     </div>
-
                     <div class="flex gap-3 pt-1">
                         <button type="button" @click="supportStep = 1"
                             class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all flex items-center justify-center gap-2">
@@ -208,16 +303,12 @@
                             Back
                         </button>
                         <button type="submit"
-                            class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all">
-                            Submit Ticket
-                        </button>
+                            class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all">Submit Ticket</button>
                     </div>
                 </div>
-
             </form>
         </div>
     </div>
-
 
     <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
@@ -228,7 +319,19 @@
             <p class="text-sm text-gray-400 font-medium mt-1">Your active rental contract with DreamHome.</p>
         </div>
 
-        {{-- SUCCESS TOASTS --}}
+        {{-- SUCCESS / ERROR TOASTS --}}
+        @if(session('payment_success'))
+        <div class="mb-5 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">
+            <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="text-sm font-bold text-emerald-700">{{ session('payment_success') }}</p>
+        </div>
+        @endif
+        @if(session('error'))
+        <div class="mb-5 bg-red-50 border border-red-200 rounded-2xl px-5 py-4 flex items-center gap-3">
+            <svg class="w-5 h-5 text-red-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+            <p class="text-sm font-bold text-red-700">{{ session('error') }}</p>
+        </div>
+        @endif
         @if(session('renewal_success'))
         <div class="mb-5 bg-emerald-50 border border-emerald-200 rounded-2xl px-5 py-4 flex items-center gap-3">
             <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
@@ -287,17 +390,11 @@
                             </div>
                             <div class="flex flex-col items-end gap-2">
                                 @if($lease->payment_status === 'PAID')
-                                    <span class="bg-emerald-500/20 backdrop-blur-sm text-emerald-300 text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-emerald-400/30">
-                                        ✓ Fully Paid
-                                    </span>
+                                    <span class="bg-emerald-500/20 text-emerald-300 text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-emerald-400/30">✓ Fully Paid</span>
                                 @elseif($lease->is_overdue)
-                                    <span class="bg-red-500/20 backdrop-blur-sm text-red-300 text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-red-400/30">
-                                        ⚠ Overdue
-                                    </span>
+                                    <span class="bg-red-500/20 text-red-300 text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-red-400/30">⚠ Overdue</span>
                                 @else
-                                    <span class="bg-white/20 backdrop-blur-sm text-white text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-white/30">
-                                        ● Active
-                                    </span>
+                                    <span class="bg-white/20 text-white text-[10px] px-4 py-1.5 rounded-full font-black uppercase tracking-widest border border-white/30">● Active</span>
                                 @endif
                                 <span class="text-pink-200/60 text-[10px] font-bold uppercase tracking-widest">{{ $lease->duration }} {{ $lease->duration == 1 ? 'month' : 'months' }} contract</span>
                             </div>
@@ -306,7 +403,7 @@
 
                     <div class="p-8">
 
-                        {{-- SECTION 1: Property Details --}}
+                        {{-- Section 1: Property Details --}}
                         <div class="mb-7">
                             <div class="flex items-center gap-2 mb-4">
                                 <span class="w-1 h-4 bg-[#853953] rounded-full"></span>
@@ -338,7 +435,7 @@
 
                         <div class="border-t border-dashed border-gray-200 mb-7"></div>
 
-                        {{-- SECTION 2: Lease Terms --}}
+                        {{-- Section 2: Lease Terms --}}
                         <div class="mb-7">
                             <div class="flex items-center gap-2 mb-4">
                                 <span class="w-1 h-4 bg-[#853953] rounded-full"></span>
@@ -386,7 +483,7 @@
 
                         <div class="border-t border-dashed border-gray-200 mb-7"></div>
 
-                        {{-- SECTION 3: Contract Period --}}
+                        {{-- Section 3: Contract Period --}}
                         <div class="mb-7">
                             <div class="flex items-center gap-2 mb-4">
                                 <span class="w-1 h-4 bg-[#853953] rounded-full"></span>
@@ -417,25 +514,47 @@
                         <div class="border-t border-dashed border-gray-200 mb-6"></div>
 
                         {{-- ACTION BUTTONS --}}
-                        <div class="flex flex-wrap gap-3">
-                            {{-- Download PDF --}}
-                            <a href="{{ route('leases.pdf') }}"
-                                class="flex items-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#853953] transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                Download PDF
-                            </a>
-                            {{-- Request Renewal --}}
-                            <button @click="showRenewal = true"
-                                class="flex items-center gap-2 px-5 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
-                                Request Renewal
-                            </button>
-                            {{-- Contact Support --}}
-                            <button @click="showSupport = true"
-                                class="flex items-center gap-2 px-5 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">
-                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
-                                Contact Support
-                            </button>
+                        <div class="space-y-3">
+
+                            {{-- PAY BUTTONS --}}
+                            @if($lease->payment_status !== 'PAID' && $lease->balance > 0)
+                            <div class="grid grid-cols-2 gap-3">
+                                <button @click="payType = 'this_month'; payMonths = 1; payMethod = ''; showPayment = true"
+                                    class="flex items-center justify-center gap-2 py-3.5 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm shadow-pink-100">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                                    Pay This Month
+                                </button>
+                                <button @click="payType = 'advance'; payMonths = 2; payMethod = ''; showPayment = true"
+                                    class="flex items-center justify-center gap-2 py-3.5 bg-gray-900 text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#853953] active:scale-95 transition-all shadow-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
+                                    Pay in Advance
+                                </button>
+                            </div>
+                            @else
+                            <div class="flex items-center gap-3 bg-emerald-50 border border-emerald-100 rounded-xl px-4 py-3">
+                                <svg class="w-5 h-5 text-emerald-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <p class="text-xs font-black text-emerald-700">Your lease is fully paid — no outstanding balance!</p>
+                            </div>
+                            @endif
+
+                            <div class="flex flex-wrap gap-3">
+                                <a href="{{ route('leases.pdf') }}"
+                                    class="flex items-center gap-2 px-5 py-3 bg-gray-900 text-white rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-[#853953] transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                    Download PDF
+                                </a>
+                                <button @click="showRenewal = true"
+                                    class="flex items-center gap-2 px-5 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/></svg>
+                                    Request Renewal
+                                </button>
+                                <button @click="showSupport = true"
+                                    class="flex items-center gap-2 px-5 py-3 bg-white text-gray-600 border border-gray-200 rounded-xl font-black text-[10px] uppercase tracking-widest hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg>
+                                    Contact Support
+                                </button>
+                            </div>
+
                         </div>
 
                     </div>
@@ -443,7 +562,7 @@
             </div>
 
             {{-- SIDEBAR --}}
-            <aside class="w-full lg:w-72 shrink-0 space-y-5">
+            <aside class="w-full lg:w-72 shrink-0">
                 <div class="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden sticky top-6">
 
                     <div class="px-6 py-5 border-b border-gray-50">
@@ -471,7 +590,7 @@
 
                         <div class="border-t border-gray-50"></div>
 
-                        {{-- Balance Summary from lease_agreement --}}
+                        {{-- Balance Summary --}}
                         <div class="space-y-3">
                             <div class="bg-[#F3F4F6] rounded-xl p-4 border border-gray-100">
                                 <p class="text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1">Total Paid</p>
@@ -493,7 +612,7 @@
 
                         <div class="border-t border-gray-50"></div>
 
-                        {{-- Next Payment / Fully Paid --}}
+                        {{-- Next Payment --}}
                         <div>
                             <button @click="selectedSection = (selectedSection === 'upcoming' ? null : 'upcoming')"
                                 class="flex items-center justify-between w-full outline-none mb-3">
@@ -513,7 +632,6 @@
                             </button>
                             <div x-show="selectedSection === 'upcoming'" x-cloak>
                                 @if($lease->payment_status === 'PAID')
-                                {{-- Fully Paid Badge --}}
                                 <div class="bg-emerald-50 border border-emerald-100 rounded-xl p-4">
                                     <div class="flex items-center gap-3">
                                         <div class="w-8 h-8 bg-emerald-100 rounded-full flex items-center justify-center shrink-0">
@@ -527,7 +645,6 @@
                                     </div>
                                 </div>
                                 @else
-                                {{-- Next Payment Info --}}
                                 <div class="bg-pink-50 border border-pink-100 rounded-xl p-4">
                                     <div class="flex items-start gap-3">
                                         <div class="w-2 h-2 rounded-full bg-[#853953] mt-1.5 shrink-0 animate-pulse"></div>
@@ -596,6 +713,8 @@
 
                     </div>
                 </div>
+            </aside>
+
         </div>
         @endif
 

@@ -111,6 +111,64 @@ class LeasesController extends Controller
         return $pdf->download('lease-' . $lease->leaseno . '.pdf');
     }
 
+    // ===== PROCESS PAYMENT =====
+    public function processPayment(Request $request)
+    {
+        $request->validate([
+            'payment_type'   => 'required|in:this_month,advance',
+            'months'         => 'required_if:payment_type,advance|integer|min:1|max:12',
+            'payment_method' => 'required|string',
+            'reference_no'   => 'nullable|string|max:100',
+            'notes'          => 'nullable|string|max:300',
+        ]);
+
+        $user  = Auth::user();
+        $lease = $this->fetchLease($user->renterno);
+
+        if (!$lease) {
+            return back()->with('error', 'No active lease found.');
+        }
+
+        if ($lease->balance <= 0) {
+            return back()->with('error', 'Your lease is already fully paid.');
+        }
+
+        $months     = $request->payment_type === 'advance' ? (int) $request->months : 1;
+        $amountPaid = $lease->monthly_rent * $months;
+
+        // Cap at remaining balance
+        $amountPaid = min($amountPaid, $lease->balance);
+
+        $paymentId = 'PAY' . strtoupper(uniqid());
+        $notes     = $request->notes
+            ?: ($months === 1
+                ? 'Monthly rent payment'
+                : "Advance payment for {$months} month(s)");
+
+        if ($request->payment_method !== 'Cash' && $request->reference_no) {
+            $notes .= ' | Ref: ' . $request->reference_no;
+        }
+
+        DB::statement("CALL insert_payment(
+            CAST(:paymentid AS TEXT),
+            CAST(:leaseno AS TEXT),
+            CAST(:amount_paid AS NUMERIC),
+            CAST(:payment_method AS TEXT),
+            CAST(:notes AS TEXT)
+        )", [
+            'paymentid'      => $paymentId,
+            'leaseno'        => $lease->leaseno,
+            'amount_paid'    => $amountPaid,
+            'payment_method' => $request->payment_method,
+            'notes'          => $notes,
+        ]);
+
+        $label = $months === 1 ? 'Monthly payment' : "Advance payment ({$months} months)";
+        return back()->with('payment_success',
+            "✓ {$label} of ₱" . number_format($amountPaid, 2) . " recorded successfully via {$request->payment_method}!"
+        );
+    }
+
     // ===== REQUEST RENEWAL =====
     public function requestRenewal(Request $request)
     {
@@ -126,7 +184,6 @@ class LeasesController extends Controller
             return back()->with('error', 'No active lease found.');
         }
 
-        // Generate unique request ID
         $requestId = 'RR' . time();
 
         DB::table('renewal_request')->insert([
