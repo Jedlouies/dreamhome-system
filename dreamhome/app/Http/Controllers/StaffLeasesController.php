@@ -11,13 +11,10 @@ class StaffLeasesController extends Controller
 {
     /**
      * Display all leases.
-     * Note: Uses 'is_paid_this_month' as a real-time flag for the staff dashboard.
+     * Note: Uses synchronized advance token logic to determine if paid this month.
      */
     public function index(Request $request)
     {
-        $currentMonth = now()->month;
-        $currentYear = now()->year;
-
         $query = DB::table('lease_agreement as l')
             ->join('property as p', 'l.propertyno', '=', 'p.propertyno')
             ->join('renter as r', 'l.renterno', '=', 'r.renterno');
@@ -37,15 +34,68 @@ class StaffLeasesController extends Controller
                 'p.street', 'p.city', 
                 'r.firstname as r_fname', 'r.lastname as r_lname'
             )
-            ->addSelect([
-                'is_paid_this_month' => DB::table('payment')
-                    ->whereColumn('leaseno', 'l.leaseno')
-                    ->whereMonth('payment_date', $currentMonth)
-                    ->whereYear('payment_date', $currentYear)
-                    ->selectRaw('count(*) > 0')
-            ])
             ->orderBy('l.startdate', 'desc')
             ->get();
+
+        $currentMonthLabel = Carbon::now()->format('F Y');
+
+        // Dynamically compute payment status for the current month across all leases using the Token Engine
+        foreach ($leases as $lease) {
+            if ($lease->balance <= 0 || $lease->payment_status === 'PAID') {
+                $lease->is_paid_this_month = true;
+                continue;
+            }
+
+            $payments = DB::table('payment')
+                ->where('leaseno', $lease->leaseno)
+                ->orderBy('payment_date', 'asc')
+                ->get();
+
+            $advanceCreditMonths = 0;
+            $coveredSpecificMonths = [];
+
+            foreach ($payments as $payment) {
+                if (!empty($payment->notes)) {
+                    if (preg_match('/Advance payment packages for (\d+) month\(s\)/i', $payment->notes, $matches)) {
+                        $advanceCreditMonths += (int)$matches[1];
+                    } elseif (preg_match('/Rent statement for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
+                        $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
+                    } elseif (preg_match('/Overdue rent payment for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
+                        $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
+                    }
+                }
+            }
+
+            $leaseStart = Carbon::parse($lease->startdate)->startOfMonth();
+            $leaseEnd = Carbon::parse($lease->enddate)->endOfMonth();
+            $periods = CarbonPeriod::create($leaseStart, '1 month', $leaseEnd);
+            
+            $isPaidThisMonthCalculated = false;
+
+            foreach ($periods as $date) {
+                $monthLabel = $date->format('F Y');
+                $isPaidForPeriod = in_array($monthLabel, $coveredSpecificMonths);
+
+                if (!$isPaidForPeriod && $advanceCreditMonths > 0) {
+                    $isPaidForPeriod = true;
+                    $advanceCreditMonths--;
+                }
+
+                if (!$isPaidForPeriod) {
+                    $isPaidForPeriod = $payments->contains(function ($payment) use ($date) {
+                        $payDate = Carbon::parse($payment->payment_date);
+                        return $payDate->between($date->copy()->startOfMonth(), $date->copy()->endOfMonth());
+                    });
+                }
+
+                if ($monthLabel === $currentMonthLabel) {
+                    $isPaidThisMonthCalculated = $isPaidForPeriod;
+                    break;
+                }
+            }
+
+            $lease->is_paid_this_month = $isPaidThisMonthCalculated;
+        }
 
         return view('staff.leases.index', compact('leases'));
     }
@@ -72,7 +122,6 @@ class StaffLeasesController extends Controller
         $start = Carbon::parse($request->startdate);
         $end = Carbon::parse($request->enddate);
         
-        // Calculate duration in months (rounding up to ensure full term coverage)
         $duration = max(1, $start->diffInMonths($end));
 
         DB::table('lease_agreement')->insert([
@@ -98,7 +147,7 @@ class StaffLeasesController extends Controller
     }
 
     /**
-     * Detailed View: Month-by-month payment tracking.
+     * Detailed View: Month-by-month payment tracking with Advance Credit Token Engine.
      */
     public function show($id)
     {
@@ -117,38 +166,78 @@ class StaffLeasesController extends Controller
 
         if (!$lease) abort(404);
 
-        // Fetch all payments unmapped so we can iterate and dynamically filter them
         $payments = DB::table('payment')
             ->where('leaseno', $id)
             ->orderBy('payment_date', 'asc')
             ->get();
 
-        // Generate the expected payment schedule based on lease duration
+        // 1. CHRONOLOGICAL CREDIT POOL RECONCILIATION
+        $advanceCreditMonths = 0;
+        $coveredSpecificMonths = [];
+        $paymentMap = []; // Maps unique month text labels to an explicit payment object for view rendering
+
+        foreach ($payments as $payment) {
+            if (!empty($payment->notes)) {
+                if (preg_match('/Advance payment packages for (\d+) month\(s\)/i', $payment->notes, $matches)) {
+                    $monthsCount = (int)$matches[1];
+                    // Keep track of how many credits this specific transaction contains
+                    for ($i = 0; $i < $monthsCount; $i++) {
+                        $paymentMap['CREDIT_INDEX_' . ($advanceCreditMonths)] = $payment;
+                        $advanceCreditMonths++;
+                    }
+                } elseif (preg_match('/Rent statement for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
+                    $label = Carbon::parse($matches[1])->format('F Y');
+                    $coveredSpecificMonths[] = $label;
+                    $paymentMap[$label] = $payment;
+                } elseif (preg_match('/Overdue rent payment for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
+                    $label = Carbon::parse($matches[1])->format('F Y');
+                    $coveredSpecificMonths[] = $label;
+                    $paymentMap[$label] = $payment;
+                }
+            }
+        }
+
         $start = Carbon::parse($lease->startdate)->startOfMonth();
         $end = Carbon::parse($lease->enddate)->startOfMonth();
         $periods = CarbonPeriod::create($start, '1 month', $end);
 
         $schedule = [];
+        $consumedCreditsCount = 0;
+
+        // 2. RUN SEQUENCER LOOKAHEAD LOOP
         foreach ($periods as $date) {
             $monthLabel = $date->format('F Y');
+            $matchingPayment = null;
+            $isPaid = false;
 
-            // STAFF ENGINE REALIGNMENT: Check strings inside notes OR fallback to matching calendar timestamps
-            $matchingPayment = $payments->first(function ($payment) use ($date, $monthLabel) {
-                // Check 1: Did the renter or staff target this month directly inside the text log?
-                if (!empty($payment->notes) && stripos($payment->notes, $monthLabel) !== false) {
-                    return true;
-                }
+            // Priority A: Target by explicit label text
+            if (in_array($monthLabel, $coveredSpecificMonths)) {
+                $isPaid = true;
+                $matchingPayment = $paymentMap[$monthLabel] ?? null;
+            }
 
-                // Check 2: Fallback natural check—did the transaction occur directly within this calendar month window?
-                $payDate = Carbon::parse($payment->payment_date);
-                $periodStart = $date->copy()->startOfMonth()->startOfDay();
-                $periodEnd = $date->copy()->endOfMonth()->endOfDay();
-                return $payDate->between($periodStart, $periodEnd);
-            });
+            // Priority B: Use generic pool advance credit tokens
+            if (!$isPaid && $advanceCreditMonths > 0) {
+                $isPaid = true;
+                $matchingPayment = $paymentMap['CREDIT_INDEX_' . $consumedCreditsCount] ?? null;
+                $consumedCreditsCount++;
+                $advanceCreditMonths--;
+            }
+
+            // Priority C: Natural fallback matching system date range
+            if (!$isPaid) {
+                $matchingPayment = $payments->first(function ($payment) use ($date) {
+                    $payDate = Carbon::parse($payment->payment_date);
+                    $periodStart = $date->copy()->startOfMonth()->startOfDay();
+                    $periodEnd = $date->copy()->endOfMonth()->endOfDay();
+                    return $payDate->between($periodStart, $periodEnd);
+                });
+                $isPaid = !is_null($matchingPayment);
+            }
 
             $schedule[] = [
                 'month'   => $monthLabel,
-                'is_paid' => !is_null($matchingPayment),
+                'is_paid' => $isPaid,
                 'payment' => $matchingPayment,
                 'due_date'=> $date->copy()->day(1)->format('Y-m-d')
             ];
@@ -159,7 +248,7 @@ class StaffLeasesController extends Controller
 
     /**
      * Staff-Initiated Payment Recording.
-     * Useful for recording cash payments at the branch.
+     * Modified to optionally support manual text tags if applicable.
      */
     public function processPayment(Request $request)
     {
@@ -172,9 +261,6 @@ class StaffLeasesController extends Controller
         ]);
 
         $paymentId = 'PAY-' . strtoupper(uniqid());
-
-        // Automatically append the targeted month name into the notes if staff inputs it
-        // This ensures the custom-string matching engine registers it flawlessly.
         $notes = $request->notes ?? 'Manual staff entry';
 
         DB::table('payment')->insert([

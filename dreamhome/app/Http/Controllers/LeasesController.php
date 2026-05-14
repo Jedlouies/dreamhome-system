@@ -89,6 +89,28 @@ class LeasesController extends Controller
                 $today      = Carbon::now()->startOfDay();
                 $currentMonthLabel = Carbon::now()->format('F Y');
 
+                // TRACKING CREDIT POOL:
+                // Count total distinct advance month packages or individual statements recorded
+                $advanceCreditMonths = 0;
+                $coveredSpecificMonths = [];
+
+                foreach ($payments as $payment) {
+                    if (!empty($payment->notes)) {
+                        // 1. If statement lists explicit months dynamically ("Advance payment packages for X month(s)")
+                        if (preg_match('/Advance payment packages for (\d+) month\(s\)/i', $payment->notes, $matches)) {
+                            $advanceCreditMonths += (int)$matches[1];
+                        } 
+                        // 2. If it targets an explicit literal string text token ("Rent statement for June 2024")
+                        elseif (preg_match('/Rent statement for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
+                            $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
+                        }
+                        // 3. Alternate description matching log syntax wrapper
+                        elseif (preg_match('/Overdue rent payment for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
+                            $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
+                        }
+                    }
+                }
+
                 $currentPeriod = $leaseStart->copy();
                 $firstUnpaidDate = null;
 
@@ -96,16 +118,23 @@ class LeasesController extends Controller
                 while ($currentPeriod->isBefore($leaseEnd)) {
                     $monthLabel = $currentPeriod->format('F Y');
 
-                    $isPaidForPeriod = $payments->contains(function ($payment) use ($currentPeriod, $monthLabel) {
-                        if (!empty($payment->notes) && stripos($payment->notes, $monthLabel) !== false) {
-                            return true;
-                        }
+                    // Check if explicit string matches or if we have general balance credits to consume
+                    $isPaidForPeriod = in_array($monthLabel, $coveredSpecificMonths);
 
-                        $payDate     = Carbon::parse($payment->payment_date);
-                        $periodStart = $currentPeriod->copy()->startOfMonth()->startOfDay();
-                        $periodEnd   = $currentPeriod->copy()->endOfMonth()->endOfDay();
-                        return $payDate->between($periodStart, $periodEnd);
-                    });
+                    if (!$isPaidForPeriod && $advanceCreditMonths > 0) {
+                        $isPaidForPeriod = true;
+                        $advanceCreditMonths--; // Consume an advance payment block credit token
+                    }
+
+                    // Fallback to transaction date verification if notes fields aren't present
+                    if (!$isPaidForPeriod) {
+                        $isPaidForPeriod = $payments->contains(function ($payment) use ($currentPeriod) {
+                            $payDate     = Carbon::parse($payment->payment_date);
+                            $periodStart = $currentPeriod->copy()->startOfMonth()->startOfDay();
+                            $periodEnd   = $currentPeriod->copy()->endOfMonth()->endOfDay();
+                            return $payDate->between($periodStart, $periodEnd);
+                        });
+                    }
 
                     // Track explicitly if this current calendar month has been marked paid
                     if ($monthLabel === $currentMonthLabel && $isPaidForPeriod) {
@@ -162,7 +191,8 @@ class LeasesController extends Controller
 
         $paymentId = 'PAY' . strtoupper(uniqid());
         
-        $notes = $request->notes ?: ($months === 1 ? 'Standard monthly rent' : "Advance payment for {$months} months");
+        // Match explicit synchronized notes logic built into Blade forms
+        $notes = $request->notes ?: ($months === 1 ? 'Rent statement for ' . now()->format('F Y') : "Advance payment packages for {$months} month(s)");
         
         if ($request->reference_no && $request->payment_method !== 'Cash') {
             $notes .= ' | Ref: ' . $request->reference_no;
