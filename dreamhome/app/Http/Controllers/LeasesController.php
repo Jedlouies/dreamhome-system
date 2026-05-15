@@ -93,20 +93,27 @@ class LeasesController extends Controller
                 // Count total distinct advance month packages or individual statements recorded
                 $advanceCreditMonths = 0;
                 $coveredSpecificMonths = [];
+                // Track payments already resolved by notes so the fallback date check doesn't double-count them.
+                // e.g. paying overdue January in May has payment_date in May; without this, the fallback
+                // would also mark May as paid using that same payment record.
+                $consumedPaymentIds = [];
 
                 foreach ($payments as $payment) {
                     if (!empty($payment->notes)) {
                         // 1. If statement lists explicit months dynamically ("Advance payment packages for X month(s)")
                         if (preg_match('/Advance payment packages for (\d+) month\(s\)/i', $payment->notes, $matches)) {
                             $advanceCreditMonths += (int)$matches[1];
+                            $consumedPaymentIds[] = $payment->paymentid;
                         } 
                         // 2. If it targets an explicit literal string text token ("Rent statement for June 2024")
                         elseif (preg_match('/Rent statement for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
                             $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
+                            $consumedPaymentIds[] = $payment->paymentid;
                         }
                         // 3. Alternate description matching log syntax wrapper
                         elseif (preg_match('/Overdue rent payment for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
                             $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
+                            $consumedPaymentIds[] = $payment->paymentid;
                         }
                     }
                 }
@@ -126,9 +133,12 @@ class LeasesController extends Controller
                         $advanceCreditMonths--; // Consume an advance payment block credit token
                     }
 
-                    // Fallback to transaction date verification if notes fields aren't present
+                    // Fallback to transaction date verification if notes fields aren't present.
+                    // Skip payments already consumed by the notes logic above to prevent a single
+                    // overdue payment (e.g. paid in May for January) from also marking May as paid.
                     if (!$isPaidForPeriod) {
-                        $isPaidForPeriod = $payments->contains(function ($payment) use ($currentPeriod) {
+                        $isPaidForPeriod = $payments->contains(function ($payment) use ($currentPeriod, $consumedPaymentIds) {
+                            if (in_array($payment->paymentid, $consumedPaymentIds)) return false;
                             $payDate     = Carbon::parse($payment->payment_date);
                             $periodStart = $currentPeriod->copy()->startOfMonth()->startOfDay();
                             $periodEnd   = $currentPeriod->copy()->endOfMonth()->endOfDay();
