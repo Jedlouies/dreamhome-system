@@ -7,6 +7,8 @@
         showRenewal: false,
         showSupport: false,
         showPayment: false,
+        currentStep: 1,
+
         payType: 'this_month',
         payMonths: 1,
         payMethod: '',
@@ -16,28 +18,13 @@
         remainingBalance: {{ $lease?->balance ?? 0 }},
         leaseStartDate: '{{ $lease?->startdate ?? now()->tostring() }}',
         
-        // Dynamic targets tracker array for advanced selections
+        // 1. Inject the true, verified unpaid months sequence from your Laravel Controller
+        unpaidMonthsSequence: {{ json_encode($unpaid_months) }},
         selectedTargetMonths: [],
 
-        // Get list of all future schedule months that haven't been completed yet
-        get upcomingMonthsList() {
-            let list = [];
-            let start = new Date(this.leaseStartDate);
-            
-            // Generate standard sequence based on duration
-            for (let i = 0; i < this.leaseDuration; i++) {
-                let d = new Date(start.getFullYear(), start.getMonth() + i, 1);
-                let label = d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-                list.push(label);
-            }
-            return list;
-        },
-
-        // Calculate maximum allowed months based on remaining financial liability
+        // 2. Fallback helper mapping remaining limit bounds
         get maxMonths() {
-            if (this.monthlyRent <= 0) return this.leaseDuration;
-            let calculatedMonths = Math.ceil(this.remainingBalance / this.monthlyRent);
-            return Math.min(this.leaseDuration, calculatedMonths);
+            return this.unpaidMonthsSequence.length > 0 ? this.unpaidMonthsSequence.length : 1;
         },
 
         get totalAmount() {
@@ -46,46 +33,54 @@
                 : this.monthlyRent * this.payMonths;
         },
 
-        // Watcher function to update selected targets automatically when the count changes
+        // 3. FIXED LOOKUP: No longer uses 'new Date()'. It naturally takes the oldest actual unpaid month block
         updateTargetMonths() {
-            // Find current month index to offset from
-            let now = new Date();
-            let currentLabel = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
-            let startIndex = this.upcomingMonthsList.indexOf(currentLabel);
-            if (startIndex === -1) startIndex = 0;
-
-            // Gather the next relative unpaid blocks matching the selected count
             let targets = [];
             let count = 0;
-            for (let i = startIndex; i < this.upcomingMonthsList.length; i++) {
+
+            // Step sequentially through the known unpaid array elements
+            for (let i = 0; i < this.unpaidMonthsSequence.length; i++) {
                 if (count >= this.payMonths) break;
-                targets.push(this.upcomingMonthsList[i]);
+                targets.push(this.unpaidMonthsSequence[i]);
                 count++;
             }
+
+            // If the database returns completely clean/empty arrays, default safely
+            if (targets.length === 0) {
+                targets.push('No open cycles found');
+            }
+
             this.selectedTargetMonths = targets;
             this.syncNotesField();
         },
 
         syncNotesField() {
             if (this.payType === 'this_month') {
-                this.payNotes = 'Rent statement for ' + new Date().toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                this.payNotes = 'Rent statement for ' + this.selectedTargetMonths[0];
             } else {
-                this.payNotes = 'Advance payment packages for: ' + this.selectedTargetMonths.join(', ');
+                $unpaidListString = this.selectedTargetMonths.join(', ');
+                this.payNotes = 'Advance payment packages for: ' + $unpaidListString;
             }
         }
      }"
-     x-init="$watch('payMonths', value => updateTargetMonths()); $watch('payType', value => { payMonths = 1; updateTargetMonths(); })">
+     x-init="
+        $watch('payMonths', value => updateTargetMonths()); 
+        $watch('payType', value => { payMonths = 1; currentStep = 1; updateTargetMonths(); });
+        $watch('showPayment', value => { if(value) { currentStep = 1; payMethod = ''; } });
+        updateTargetMonths();
+     ">
 
-    {{-- ===== PAYMENT MODAL ===== --}}
+    {{-- ===== 2-STEP SYNCHRONIZED PAYMENT MODAL ===== --}}
     <div x-show="showPayment" x-cloak
-         x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
-         x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
-         @click.self="showPayment = false"
-         class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+        x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100"
+        x-transition:leave="transition ease-in duration-150" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+        @click.self="showPayment = false"
+        class="fixed inset-0 bg-black/40 backdrop-blur-sm z-50 flex items-center justify-center px-4">
+        
         <div class="bg-white rounded-3xl shadow-2xl w-full max-w-md overflow-hidden max-h-[90vh] flex flex-col"
-             x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
+            x-transition:enter="transition ease-out duration-200" x-transition:enter-start="opacity-0 scale-95" x-transition:enter-end="opacity-100 scale-100">
 
-            {{-- Header --}}
+            {{-- Header & Summary Banner --}}
             <div class="bg-gradient-to-r from-[#853953] to-[#5d273a] px-6 py-5 shrink-0">
                 <div class="flex items-start justify-between mb-3">
                     <div>
@@ -98,7 +93,8 @@
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                 </div>
-                {{-- Amount Summary --}}
+
+                {{-- Amount Summary (Dynamically calculates based on step choice) --}}
                 <div class="bg-white/10 rounded-2xl px-5 py-4 border border-white/20">
                     <div class="flex items-center justify-between">
                         <div>
@@ -112,106 +108,150 @@
                         </div>
                     </div>
                 </div>
+
+                {{-- Step Progress Indicator Dots --}}
+                <div class="flex items-center justify-center gap-2 mt-4">
+                    <span class="h-1.5 rounded-full transition-all duration-300" :class="currentStep === 1 ? 'w-6 bg-white' : 'w-2 bg-white/40'"></span>
+                    <span class="h-1.5 rounded-full transition-all duration-300" :class="currentStep === 2 ? 'w-6 bg-white' : 'w-2 bg-white/40'"></span>
+                </div>
             </div>
 
-            <form method="POST" action="{{ route('renter.payments.process') }}" class="p-6 space-y-4 overflow-y-auto flex-1">
+            {{-- Multi-step Form Content --}}
+            <form method="POST" action="{{ route('renter.payments.process') }}" class="p-6 space-y-4 overflow-y-auto flex-1 flex flex-col justify-between">
                 @csrf
                 <input type="hidden" name="payment_type" :value="payType">
                 <input type="hidden" name="months" :value="payMonths">
 
-                {{-- STEP 1: How many months to pay? --}}
-                <div x-show="payType === 'advance'" x-cloak class="space-y-2">
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400">1. How many months to pay in advance?</label>
-                    <div class="flex items-center gap-3">
-                        <button type="button" @click="payMonths = Math.max(1, payMonths - 1)"
-                            class="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-black text-lg hover:bg-gray-200 transition-all flex items-center justify-center">−</button>
-                        <div class="flex-1 text-center bg-pink-50 rounded-xl py-2.5 border border-pink-100">
-                            <span class="text-2xl font-black text-[#853953]" x-text="payMonths"></span>
-                            <span class="text-sm text-gray-400 font-bold ml-1">month(s)</span>
+                <div class="space-y-4 flex-1">
+                    {{-- STEP 1: DURATION & COVERAGE SELECTION --}}
+                    <div x-show="currentStep === 1" x-transition.opacity.duration.200ms class="space-y-4">
+                        <div class="space-y-2">
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400">1. Structural Billing Duration</label>
+                            
+                            {{-- Controls for Advance Type --}}
+                            <div x-show="payType === 'advance'" class="flex items-center gap-3">
+                                <button type="button" @click="payMonths = Math.max(1, payMonths - 1)"
+                                    class="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-black text-lg hover:bg-gray-200 transition-all flex items-center justify-center">−</button>
+                                <div class="flex-1 text-center bg-pink-50 rounded-xl py-2.5 border border-pink-100">
+                                    <span class="text-2xl font-black text-[#853953]" x-text="payMonths"></span>
+                                    <span class="text-sm text-gray-400 font-bold ml-1">month(s)</span>
+                                </div>
+                                <button type="button" @click="payMonths = Math.min(maxMonths, payMonths + 1)"
+                                    class="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-black text-lg hover:bg-gray-200 transition-all flex items-center justify-center">+</button>
+                            </div>
+
+                            {{-- Display for Single Month Type (Pulls the direct dynamic next unpaid block) --}}
+                            <div x-show="payType === 'this_month'" class="bg-gray-50 border border-gray-200 text-center rounded-xl py-3 text-sm font-bold text-gray-600">
+                                Paying single billing cycle: <span class="text-[#853953] font-black" x-text="selectedTargetMonths[0]"></span>
+                            </div>
+
+                            <p x-show="payType === 'advance'" class="text-[10px] text-gray-400 font-bold text-center mt-1">
+                                Max Allowed: <span x-text="maxMonths"></span> month(s) based on outstanding statement history
+                            </p>
                         </div>
-                        <button type="button" @click="payMonths = Math.min(maxMonths, payMonths + 1)"
-                            class="w-10 h-10 rounded-xl bg-gray-100 text-gray-700 font-black text-lg hover:bg-gray-200 transition-all flex items-center justify-center">+</button>
-                    </div>
-                    <p class="text-[10px] text-gray-400 font-bold text-center mt-1">
-                        Max Allowed: <span x-text="maxMonths"></span> month(s) based on remaining balance
-                    </p>
-                </div>
 
-                {{-- STEP 2: Explicit target selection visualization mapping --}}
-                <div x-show="payType === 'advance'" x-cloak class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">2. Mapped Billing Cycles to be Paid:</label>
-                    <div class="space-y-1.5 max-h-32 overflow-y-auto pr-1">
-                        <template x-for="(month, index) in selectedTargetMonths" :key="index">
-                            <div class="flex items-center justify-between bg-white rounded-xl px-3 py-2 border border-gray-100 shadow-sm">
-                                <span class="text-xs font-black text-gray-800" x-text="month"></span>
-                                <span class="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg border border-emerald-100">Covered</span>
+                        {{-- Target Cycle Visualization Mapping --}}
+                        <div class="bg-gray-50 border border-gray-200 rounded-2xl p-4">
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Mapped Billing Cycles to be Paid:</label>
+                            <div class="space-y-1.5 max-h-36 overflow-y-auto pr-1">
+                                <template x-for="(month, index) in selectedTargetMonths" :key="index">
+                                    <div class="flex items-center justify-between bg-white rounded-xl px-3 py-2 border border-gray-100 shadow-sm">
+                                        <span class="text-xs font-black text-gray-800" x-text="month"></span>
+                                        <span class="text-[10px] font-black bg-emerald-50 text-emerald-600 px-2 py-0.5 rounded-lg border border-emerald-100">Covered</span>
+                                    </div>
+                                </template>
                             </div>
-                        </template>
+                        </div>
                     </div>
-                </div>
 
-                {{-- Payment Method --}}
-                <div class="pt-2 border-t border-dashed border-gray-100">
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Payment Method</label>
-                    <div class="grid grid-cols-3 gap-2">
-                        @foreach([
-                            ['value' => 'GCash',     'label' => 'GCash',     'sub' => 'E-Wallet', 'bg' => '#007DFF', 'initial' => 'G'],
-                            ['value' => 'Maya',      'label' => 'Maya',      'sub' => 'E-Wallet', 'bg' => '#0077B6', 'initial' => 'M'],
-                            ['value' => 'BPI',       'label' => 'BPI',       'sub' => 'Bank',     'bg' => '#C41E3A', 'initial' => 'BPI'],
-                            ['value' => 'BDO',       'label' => 'BDO',       'sub' => 'Bank',     'bg' => '#003087', 'initial' => 'BDO'],
-                            ['value' => 'UnionBank',  'label' => 'UnionBank', 'sub' => 'Bank',     'bg' => '#E8600A', 'initial' => 'UB'],
-                            ['value' => 'Cash',      'label' => 'Cash',      'sub' => 'Counter',  'bg' => '#059669', 'initial' => '₱'],
-                        ] as $method)
-                        <label class="cursor-pointer">
-                            <input type="radio" name="payment_method" value="{{ $method['value'] }}" x-model="payMethod" class="sr-only" required>
-                            <div :class="payMethod === '{{ $method['value'] }}' ? 'ring-2 ring-[#853953] border-[#853953] bg-pink-50' : 'border-gray-200 hover:border-gray-300'"
-                                 class="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all text-center">
-                                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-[9px]"
-                                     style="background: {{ $method['bg'] }}">{{ $method['initial'] }}</div>
-                                <p class="text-[10px] font-black text-gray-800 leading-tight">{{ $method['label'] }}</p>
-                                <p class="text-[9px] text-gray-400 font-bold leading-none">{{ $method['sub'] }}</p>
+                    {{-- STEP 2: PAYMENT METHOD SELECTION --}}
+                    <div x-show="currentStep === 2" x-transition.opacity.duration.200ms class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-2">Select Payment Method</label>
+                            <div class="grid grid-cols-3 gap-2">
+                                @foreach([
+                                    ['value' => 'GCash',     'label' => 'GCash',     'sub' => 'E-Wallet', 'bg' => '#007DFF', 'initial' => 'G'],
+                                    ['value' => 'Maya',      'label' => 'Maya',      'sub' => 'E-Wallet', 'bg' => '#0077B6', 'initial' => 'M'],
+                                    ['value' => 'BPI',       'label' => 'BPI',       'sub' => 'Bank',     'bg' => '#C41E3A', 'initial' => 'BPI'],
+                                    ['value' => 'BDO',       'label' => 'BDO',       'sub' => 'Bank',     'bg' => '#003087', 'initial' => 'BDO'],
+                                    ['value' => 'UnionBank',  'label' => 'UnionBank', 'sub' => 'Bank',     'bg' => '#E8600A', 'initial' => 'UB'],
+                                    ['value' => 'Cash',      'label' => 'Cash',      'sub' => 'Counter',  'bg' => '#059669', 'initial' => '₱'],
+                                ] as $method)
+                                <label class="cursor-pointer">
+                                    <input type="radio" name="payment_method" value="{{ $method['value'] }}" x-model="payMethod" class="sr-only" :required="currentStep === 2">
+                                    <div :class="payMethod === '{{ $method['value'] }}' ? 'ring-2 ring-[#853953] border-[#853953] bg-pink-50' : 'border-gray-200 hover:border-gray-300'"
+                                        class="flex flex-col items-center gap-1.5 p-2.5 rounded-xl border-2 transition-all text-center select-none">
+                                        <div class="w-8 h-8 rounded-lg flex items-center justify-center text-white font-black text-[9px]"
+                                            style="background: {{ $method['bg'] }}">{{ $method['initial'] }}</div>
+                                        <p class="text-[10px] font-black text-gray-800 leading-tight">{{ $method['label'] }}</p>
+                                        <p class="text-[9px] text-gray-400 font-bold leading-none">{{ $method['sub'] }}</p>
+                                    </div>
+                                </label>
+                                @endforeach
                             </div>
-                        </label>
-                        @endforeach
+                        </div>
+
+                        {{-- Reference Number Field --}}
+                        <div x-show="payMethod && payMethod !== 'Cash'" x-cloak>
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Reference Number</label>
+                            <input type="text" name="reference_no" placeholder="e.g. 1234567890" :required="payMethod && payMethod !== 'Cash' && currentStep === 2"
+                                class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
+                        </div>
+
+                        {{-- Cash Counter Note --}}
+                        <div x-show="payMethod === 'Cash'" x-cloak>
+                            <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 flex items-start gap-2">
+                                <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                <p class="text-[11px] font-bold text-amber-700">Please bring exact amount to the DreamHome branch office. Staff will record your payment on site.</p>
+                            </div>
+                        </div>
+
+                        {{-- Dynamic Notes Field Statement Log --}}
+                        <div>
+                            <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Description Statement Log</label>
+                            <input type="text" name="notes" x-model="payNotes" readonly
+                                class="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-500 font-bold focus:outline-none cursor-not-allowed">
+                        </div>
                     </div>
                 </div>
 
-                {{-- Reference number (hidden for Cash) --}}
-                <div x-show="payMethod && payMethod !== 'Cash'" x-cloak>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Reference Number</label>
-                    <input type="text" name="reference_no" placeholder="e.g. 1234567890"
-                        class="w-full bg-gray-50 border border-gray-200 rounded-xl px-4 py-2.5 text-sm text-gray-800 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
-                </div>
+                {{-- Smart Footer Navigation Controls --}}
+                <div class="flex gap-3 pt-4 mt-6 border-t border-gray-100 sticky bottom-0 bg-white">
+                    {{-- STEP 1 FOOTER INTERFACE --}}
+                    <template x-if="currentStep === 1">
+                        <div class="flex gap-3 w-full">
+                            <button type="button" @click="showPayment = false"
+                                class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                                Cancel
+                            </button>
+                            <button type="button" @click="currentStep = 2"
+                                class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm text-center">
+                                Continue to Pay
+                            </button>
+                        </div>
+                    </template>
 
-                {{-- Cash note --}}
-                <div x-show="payMethod === 'Cash'" x-cloak>
-                    <div class="bg-amber-50 border border-amber-100 rounded-xl p-3 flex items-start gap-2">
-                        <svg class="w-4 h-4 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                        <p class="text-[11px] font-bold text-amber-700">Please bring exact amount to the DreamHome branch office. Staff will record your payment on site.</p>
-                    </div>
-                </div>
-
-                {{-- Notes Statement System --}}
-                <div>
-                    <label class="block text-[10px] font-black uppercase tracking-widest text-gray-400 mb-1.5">Description Statement Log</label>
-                    <input type="text" name="notes" x-model="payNotes" readonly
-                        class="w-full bg-gray-100 border border-gray-200 rounded-xl px-4 py-2.5 text-xs text-gray-500 font-bold focus:outline-none cursor-not-allowed">
-                </div>
-
-                {{-- Buttons --}}
-                <div class="flex gap-3 pt-1 sticky bottom-0 bg-white">
-                    <button type="button" @click="showPayment = false"
-                        class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
-                        Cancel
-                    </button>
-                    <button type="submit" x-show="payMethod" x-cloak
-                        class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
-                        Confirm Payment
-                    </button>
-                    <div x-show="!payMethod"
-                        class="flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest text-center cursor-not-allowed">
-                        Select Method
-                    </div>
+                    {{-- STEP 2 FOOTER INTERFACE --}}
+                    <template x-if="currentStep === 2">
+                        <div class="flex gap-3 w-full">
+                            <button type="button" @click="currentStep = 1"
+                                class="flex-1 py-3 bg-gray-100 text-gray-500 rounded-xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-all">
+                                Back
+                            </button>
+                            
+                            {{-- Active Action Submission --}}
+                            <button type="submit" x-show="payMethod" x-cloak
+                                class="flex-1 py-3 bg-[#853953] text-white rounded-xl font-black text-xs uppercase tracking-widest hover:bg-[#6e2e44] active:scale-95 transition-all shadow-sm">
+                                Confirm Payment
+                            </button>
+                            
+                            {{-- Incomplete State Warning --}}
+                            <div x-show="!payMethod"
+                                class="flex-1 py-3 bg-gray-200 text-gray-400 rounded-xl font-black text-xs uppercase tracking-widest text-center cursor-not-allowed">
+                                Select Method
+                            </div>
+                        </div>
+                    </template>
                 </div>
             </form>
         </div>
