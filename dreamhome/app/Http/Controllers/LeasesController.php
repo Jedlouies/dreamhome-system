@@ -66,7 +66,8 @@ class LeasesController extends Controller
                 'next_due_date'    => 'N/A',
                 'overdue_months'   => [],
                 'hasPaidThisMonth' => false,
-                'unpaid_months'    => []
+                'unpaid_months'    => [],
+                'next_unpaid_month'=> Carbon::now()->format('F Y')
             ]);
         }
 
@@ -76,6 +77,7 @@ class LeasesController extends Controller
         $branch   = DB::table('branch')->where('branchno', 'B001')->first();
 
         $next_due_date = 'N/A';
+        $next_unpaid_month = Carbon::now()->format('F Y');
         $overdue_months = [];
         $unpaid_months = [];
         $hasPaidThisMonth = false;
@@ -83,34 +85,32 @@ class LeasesController extends Controller
         if ($lease) {
             if ($lease->balance <= 0 || $lease->payment_status === 'PAID') {
                 $next_due_date = 'Fully Paid';
+                $next_unpaid_month = 'None';
             } else {
-                $leaseStart = Carbon::parse($lease->startdate)->startOfDay();
-                $leaseEnd   = Carbon::parse($lease->enddate)->endOfDay();
+                $leaseStart = Carbon::parse($lease->startdate)->startOfMonth()->startOfDay();
+                $leaseEnd   = Carbon::parse($lease->enddate)->endOfMonth()->endOfDay();
                 $today      = Carbon::now()->startOfDay();
                 $currentMonthLabel = Carbon::now()->format('F Y');
 
-                // TRACKING CREDIT POOL:
-                // Count total distinct advance month packages or individual statements recorded
-                $advanceCreditMonths = 0;
                 $coveredSpecificMonths = [];
-                // Track payments already resolved by notes so the fallback date check doesn't double-count them.
-                // e.g. paying overdue January in May has payment_date in May; without this, the fallback
-                // would also mark May as paid using that same payment record.
                 $consumedPaymentIds = [];
 
                 foreach ($payments as $payment) {
                     if (!empty($payment->notes)) {
-                        // 1. If statement lists explicit months dynamically ("Advance payment packages for X month(s)")
-                        if (preg_match('/Advance payment packages for (\d+) month\(s\)/i', $payment->notes, $matches)) {
-                            $advanceCreditMonths += (int)$matches[1];
+                        if (preg_match('/Advance payment packages for:\s*(.+)/i', $payment->notes, $matches)) {
+                            $parsedMonths = explode(',', $matches[1]);
+                            foreach ($parsedMonths as $rawMonth) {
+                                $cleanMonth = trim(explode('|', $rawMonth)[0]);
+                                try {
+                                    $coveredSpecificMonths[] = Carbon::parse($cleanMonth)->format('F Y');
+                                } catch (\Exception $e) { /* Skip malformed tokens */ }
+                            }
                             $consumedPaymentIds[] = $payment->paymentid;
                         } 
-                        // 2. If it targets an explicit literal string text token ("Rent statement for June 2024")
                         elseif (preg_match('/Rent statement for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
                             $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
                             $consumedPaymentIds[] = $payment->paymentid;
                         }
-                        // 3. Alternate description matching log syntax wrapper
                         elseif (preg_match('/Overdue rent payment for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
                             $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
                             $consumedPaymentIds[] = $payment->paymentid;
@@ -121,21 +121,10 @@ class LeasesController extends Controller
                 $currentPeriod = $leaseStart->copy();
                 $firstUnpaidDate = null;
 
-                // CHRONOLOGICAL LOOK-AHEAD SEQUENCER ENGINE
                 while ($currentPeriod->isBefore($leaseEnd)) {
                     $monthLabel = $currentPeriod->format('F Y');
-
-                    // Check if explicit string matches or if we have general balance credits to consume
                     $isPaidForPeriod = in_array($monthLabel, $coveredSpecificMonths);
 
-                    if (!$isPaidForPeriod && $advanceCreditMonths > 0) {
-                        $isPaidForPeriod = true;
-                        $advanceCreditMonths--; // Consume an advance payment block credit token
-                    }
-
-                    // Fallback to transaction date verification if notes fields aren't present.
-                    // Skip payments already consumed by the notes logic above to prevent a single
-                    // overdue payment (e.g. paid in May for January) from also marking May as paid.
                     if (!$isPaidForPeriod) {
                         $isPaidForPeriod = $payments->contains(function ($payment) use ($currentPeriod, $consumedPaymentIds) {
                             if (in_array($payment->paymentid, $consumedPaymentIds)) return false;
@@ -146,7 +135,6 @@ class LeasesController extends Controller
                         });
                     }
 
-                    // Track explicitly if this current calendar month has been marked paid
                     if ($monthLabel === $currentMonthLabel && $isPaidForPeriod) {
                         $hasPaidThisMonth = true;
                     }
@@ -158,7 +146,7 @@ class LeasesController extends Controller
                             $firstUnpaidDate = $currentPeriod->copy()->startOfMonth();
                         }
 
-                        if ($currentPeriod->isBefore($today)) {
+                        if ($currentPeriod->copy()->endOfMonth()->isBefore($today)) {
                             $overdue_months[] = $monthLabel;
                         }
                     }
@@ -168,13 +156,15 @@ class LeasesController extends Controller
 
                 if ($firstUnpaidDate) {
                     $next_due_date = $firstUnpaidDate->format('M d, Y');
+                    $next_unpaid_month = $firstUnpaidDate->format('F Y');
                 } else {
                     $next_due_date = 'Term Completed';
+                    $next_unpaid_month = 'None';
                 }
             }
         }
 
-        return view('leases', compact('lease', 'payments', 'progress', 'branch', 'next_due_date', 'overdue_months', 'hasPaidThisMonth', 'unpaid_months'));
+        return view('leases', compact('lease', 'payments', 'progress', 'branch', 'next_due_date', 'overdue_months', 'hasPaidThisMonth', 'unpaid_months', 'next_unpaid_month'));
     }
 
     // ===== ACTIONS & TRANSACTIONS =====
@@ -196,34 +186,120 @@ class LeasesController extends Controller
             return back()->with('error', 'Payment cannot be processed for this lease.');
         }
 
-        $months     = $request->payment_type === 'advance' ? (int) $request->months : 1;
-        $amountPaid = min($lease->monthly_rent * $months, $lease->balance);
-
-        $paymentId = 'PAY' . strtoupper(uniqid());
+        // Reconstruct true unpaid chronological tracking list sequence
+        $payments = $this->fetchPayments($lease->leaseno);
+        $leaseStart = Carbon::parse($lease->startdate)->startOfMonth()->startOfDay();
+        $leaseEnd   = Carbon::parse($lease->enddate)->endOfMonth()->endOfDay();
         
-        // Match explicit synchronized notes logic built into Blade forms
-        $notes = $request->notes ?: ($months === 1 ? 'Rent statement for ' . now()->format('F Y') : "Advance payment packages for {$months} month(s)");
+        $coveredSpecificMonths = [];
+        $consumedPaymentIds = [];
+
+        foreach ($payments as $payment) {
+            if (!empty($payment->notes)) {
+                if (preg_match('/Advance payment packages for:\s*(.+)/i', $payment->notes, $matches)) {
+                    $parsedMonths = explode(',', $matches[1]);
+                    foreach ($parsedMonths as $rawMonth) {
+                        $cleanMonth = trim(explode('|', $rawMonth)[0]);
+                        try {
+                            $coveredSpecificMonths[] = Carbon::parse($cleanMonth)->format('F Y');
+                        } catch (\Exception $e) {}
+                    }
+                    $consumedPaymentIds[] = $payment->paymentid;
+                } 
+                elseif (preg_match('/Rent statement for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
+                    $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
+                    $consumedPaymentIds[] = $payment->paymentid;
+                }
+                elseif (preg_match('/Overdue rent payment for ([a-zA-Z]+ \d{4})/i', $payment->notes, $matches)) {
+                    $coveredSpecificMonths[] = Carbon::parse($matches[1])->format('F Y');
+                    $consumedPaymentIds[] = $payment->paymentid;
+                }
+            }
+        }
+
+        $unpaidMonthsList = [];
+        $currentPeriod = $leaseStart->copy();
+
+        while ($currentPeriod->isBefore($leaseEnd)) {
+            $monthLabel = $currentPeriod->format('F Y');
+            $isPaidForPeriod = in_array($monthLabel, $coveredSpecificMonths);
+
+            if (!$isPaidForPeriod) {
+                $isPaidForPeriod = $payments->contains(function ($payment) use ($currentPeriod, $consumedPaymentIds) {
+                    if (in_array($payment->paymentid, $consumedPaymentIds)) return false;
+                    $payDate     = Carbon::parse($payment->payment_date);
+                    $periodStart = $currentPeriod->copy()->startOfMonth()->startOfDay();
+                    $periodEnd   = $currentPeriod->copy()->endOfMonth()->endOfDay();
+                    return $payDate->between($periodStart, $periodEnd);
+                });
+            }
+
+            if (!$isPaidForPeriod) {
+                $unpaidMonthsList[] = $monthLabel;
+            }
+
+            $currentPeriod->addMonth();
+        }
+
+        if (empty($unpaidMonthsList)) {
+            return back()->with('error', 'There are no outstanding unpaid billing cycles remaining.');
+        }
+
+        // Determine slice parameters safely
+        $requestedCount = $request->payment_type === 'advance' ? (int) $request->months : 1;
+
+        if ($requestedCount > count($unpaidMonthsList)) {
+            return back()->with('error', 'The requested number of billing cycles exceeds your remaining balance timeline.');
+        }
+
+        $targetedCycles = array_slice($unpaidMonthsList, 0, $requestedCount);
+        $cyclesDescriptionString = implode(', ', $targetedCycles);
+
+        // Derive financial totals dynamically based on targeted cycle length
+        $amountPaid = min($lease->monthly_rent * $requestedCount, $lease->balance);
+        $paymentId  = 'PAY' . strtoupper(uniqid());
+        
+        // Match string formats with regex configurations
+        if ($request->payment_type === 'this_month') {
+            // Check if the targeted index is a backlogged overdue period to retain historical parsing accuracy
+            $isTargetOverdue = Carbon::parse($targetedCycles[0])->endOfMonth()->isBefore(Carbon::now()->startOfDay());
+            $notes = $isTargetOverdue 
+                ? 'Overdue rent payment for ' . $cyclesDescriptionString
+                : 'Rent statement for ' . $cyclesDescriptionString;
+        } else {
+            $notes = 'Advance payment packages for: ' . $cyclesDescriptionString;
+        }
         
         if ($request->reference_no && $request->payment_method !== 'Cash') {
             $notes .= ' | Ref: ' . $request->reference_no;
         }
 
-        DB::statement("CALL insert_payment(
-            CAST(:paymentid AS TEXT),
-            CAST(:leaseno AS TEXT),
-            CAST(:amount_paid AS NUMERIC),
-            CAST(:payment_method AS TEXT),
-            CAST(:notes AS TEXT)
-        )", [
-            'paymentid'      => $paymentId,
-            'leaseno'        => $lease->leaseno,
-            'amount_paid'    => $amountPaid,
-            'payment_method' => $request->payment_method,
-            'notes'          => $notes,
-        ]);
+        // Wrap procedure call in an explicit atomic database transaction block
+        DB::beginTransaction();
+        try {
+            DB::statement("CALL insert_payment(
+                CAST(:paymentid AS TEXT),
+                CAST(:leaseno AS TEXT),
+                CAST(:amount_paid AS NUMERIC),
+                CAST(:payment_method AS TEXT),
+                CAST(:notes AS TEXT)
+            )", [
+                'paymentid'      => $paymentId,
+                'leaseno'        => $lease->leaseno,
+                'amount_paid'    => $amountPaid,
+                'payment_method' => $request->payment_method,
+                'notes'          => $notes,
+            ]);
 
-        return back()->with('payment_success', "Payment of ₱" . number_format($amountPaid, 2) . " has been successfully recorded.");
+            DB::commit();
+            return back()->with('payment_success', "Payment of ₱" . number_format($amountPaid, 2) . " covering [" . $cyclesDescriptionString . "] has been successfully recorded.");
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return back()->with('error', 'Database Transaction Failed: ' . $e->getMessage());
+        }
     }
+
+    // ===== ADDITIONAL ACTIONS =====
 
     public function downloadPdf()
     {
