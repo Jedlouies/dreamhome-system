@@ -37,7 +37,13 @@ private function getDashboardData($staff)
         ];
 
         // Specific data for Regular Staff
-        $assignedData = [];
+        $assignedData = [
+            'assignedProperties' => collect(),
+            'assignedViewings'   => collect(),
+            'assignedInspections' => collect(),
+            'completedInspections' => collect(),
+            'assignedLeases'    => collect()
+        ];
         if ($isRegular) {
             $assignedData = [
                 'assignedProperties' => DB::table('property')
