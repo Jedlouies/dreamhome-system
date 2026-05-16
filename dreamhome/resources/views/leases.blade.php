@@ -18,11 +18,9 @@
         remainingBalance: {{ $lease?->balance ?? 0 }},
         leaseStartDate: '{{ $lease?->startdate ?? now()->tostring() }}',
         
-        // 1. Inject the true, verified unpaid months sequence from your Laravel Controller
         unpaidMonthsSequence: {{ json_encode($unpaid_months) }},
         selectedTargetMonths: [],
 
-        // 2. Fallback helper mapping remaining limit bounds
         get maxMonths() {
             return this.unpaidMonthsSequence.length > 0 ? this.unpaidMonthsSequence.length : 1;
         },
@@ -33,19 +31,24 @@
                 : this.monthlyRent * this.payMonths;
         },
 
-        // 3. FIXED LOOKUP: No longer uses 'new Date()'. It naturally takes the oldest actual unpaid month block
         updateTargetMonths() {
+            if (this.payType === 'this_month') {
+                const now = new Date();
+                const label = now.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+                this.selectedTargetMonths = [label];
+                this.syncNotesField();
+                return;
+            }
+
             let targets = [];
             let count = 0;
 
-            // Step sequentially through the known unpaid array elements
             for (let i = 0; i < this.unpaidMonthsSequence.length; i++) {
                 if (count >= this.payMonths) break;
                 targets.push(this.unpaidMonthsSequence[i]);
                 count++;
             }
 
-            // If the database returns completely clean/empty arrays, default safely
             if (targets.length === 0) {
                 targets.push('No open cycles found');
             }
@@ -58,8 +61,8 @@
             if (this.payType === 'this_month') {
                 this.payNotes = 'Rent statement for ' + this.selectedTargetMonths[0];
             } else {
-                $unpaidListString = this.selectedTargetMonths.join(', ');
-                this.payNotes = 'Advance payment packages for: ' + $unpaidListString;
+                const unpaidListString = this.selectedTargetMonths.join(', ');
+                this.payNotes = 'Advance payment packages for: ' + unpaidListString;
             }
         }
      }"
@@ -69,6 +72,7 @@
         $watch('showPayment', value => { if(value) { currentStep = 1; payMethod = ''; } });
         updateTargetMonths();
      ">
+
 
     {{-- ===== 2-STEP SYNCHRONIZED PAYMENT MODAL ===== --}}
     <div x-show="showPayment" x-cloak
