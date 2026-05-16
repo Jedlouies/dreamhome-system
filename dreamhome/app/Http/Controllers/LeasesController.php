@@ -140,16 +140,17 @@ class LeasesController extends Controller
                     }
 
                     if (!$isPaidForPeriod) {
-                        $unpaid_months[] = $monthLabel;
+                    $unpaid_months[] = $monthLabel;
 
-                        if (is_null($firstUnpaidDate)) {
-                            $firstUnpaidDate = $currentPeriod->copy()->startOfMonth();
-                        }
-
-                        if ($currentPeriod->copy()->endOfMonth()->isBefore($today)) {
-                            $overdue_months[] = $monthLabel;
-                        }
+                    if (is_null($firstUnpaidDate)) {
+                        $firstUnpaidDate = $currentPeriod->copy()->startOfMonth();
                     }
+
+                    // FIXED: was ->endOfMonth()->isBefore($today)
+                    if ($currentPeriod->copy()->startOfMonth()->lte($today)) {
+                        $overdue_months[] = $monthLabel;
+                    }
+                }
 
                     $currentPeriod->addMonth();
                 }
