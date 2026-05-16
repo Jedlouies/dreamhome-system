@@ -174,12 +174,28 @@
         </div>
     </div>
 
-    {{-- ===== MAIN CONTENT ===== --}}
-    <div class="py-10 bg-[#F3F4F6] min-h-screen">
+{{-- ===== MAIN CONTENT ===== --}}
+    <div class="py-10 bg-[#F3F4F6] min-h-screen" 
+         x-data="{ 
+            search: '', 
+            type: 'all',
+            {{-- Filter logic applies strictly to the 'More Properties' list now --}}
+            matches(street, area, city, postcode, propType) {
+                const matchesSearch = !this.search || 
+                    street.toLowerCase().includes(this.search.toLowerCase()) ||
+                    area.toLowerCase().includes(this.search.toLowerCase()) ||
+                    city.toLowerCase().includes(this.search.toLowerCase()) ||
+                    postcode.toLowerCase().includes(this.search.toLowerCase());
+                
+                const matchesType = this.type === 'all' || propType.toLowerCase() === this.type.toLowerCase();
+                
+                return matchesSearch && matchesType;
+            }
+         }">
         <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
 
             @if($featured)
-            {{-- ===== FEATURED PROPERTY ===== --}}
+            {{-- ===== FEATURED PROPERTY (Always Visible) ===== --}}
             <div class="mb-8">
                 <div class="flex items-center gap-2 mb-4">
                     <span class="w-1 h-5 bg-[#853953] rounded-full inline-block"></span>
@@ -255,14 +271,14 @@
             {{-- SEARCH + FILTER --}}
             <div class="mb-5 flex flex-col sm:flex-row gap-3 items-stretch sm:items-center">
                 <div class="relative flex-1 max-w-md">
-                    <input type="text" placeholder="Search by street, area or postcode..."
+                    <input type="text" x-model="search" placeholder="Search by street, area or postcode..."
                         class="w-full pl-11 pr-4 py-3 rounded-xl border border-gray-200 bg-white shadow-sm text-sm text-gray-700 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-[#853953]/30 focus:border-[#853953] transition-all">
                     <svg class="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
                 </div>
                 <div class="flex gap-2">
-                    <button class="px-5 py-2.5 bg-[#853953] text-white rounded-xl text-sm font-bold shadow-sm hover:bg-[#6e2e44] transition-all">All</button>
-                    <button class="px-5 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Flats</button>
-                    <button class="px-5 py-2.5 bg-white text-gray-500 border border-gray-200 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Houses</button>
+                    <button @click="type = 'all'" :class="type === 'all' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200'" class="px-5 py-2.5 rounded-xl text-sm font-bold shadow-sm transition-all">All</button>
+                    <button @click="type = 'flat'" :class="type === 'flat' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200'" class="px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Flats</button>
+                    <button @click="type = 'house'" :class="type === 'house' ? 'bg-[#853953] text-white' : 'bg-white text-gray-500 border border-gray-200'" class="px-5 py-2.5 rounded-xl text-sm font-bold hover:bg-pink-50 hover:text-[#853953] hover:border-pink-100 transition-all">Houses</button>
                 </div>
             </div>
 
@@ -276,7 +292,9 @@
 
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 @foreach($rest as $property)
-                <div class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 hover:border-pink-100">
+                <div x-show="matches('{{ addslashes($property->street) }}', '{{ addslashes($property->area) }}', '{{ addslashes($property->city) }}', '{{ addslashes($property->postcode) }}', '{{ $property->property_type }}')" 
+                     x-cloak
+                     class="group bg-white rounded-2xl overflow-hidden shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1 border border-gray-100 hover:border-pink-100">
                     <div class="relative h-48 overflow-hidden">
                         @if(isset($property->main_image) && $property->main_image)
                             <img src="{{ asset('storage/' . $property->main_image) }}" alt="{{ $property->street }}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500">
@@ -325,5 +343,5 @@
         </div>
     </div>
 
-</div>{{-- end x-data --}}
+</div>{{-- end x-data wrapper --}}
 </x-app-layout>
