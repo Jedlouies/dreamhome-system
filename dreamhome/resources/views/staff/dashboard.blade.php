@@ -46,35 +46,6 @@
                     </div>
                 </div>
 
-                {{-- 3. FINALIZED INSPECTIONS (MAIN PANEL) --}}
-                    @if($completedInspections->isNotEmpty())
-                    <div>
-                        <div class="flex items-center gap-2 mb-6 px-2">
-                            <h2 class="text-[10px] font-black uppercase tracking-[0.2em] text-[#853953]">Completed Inspection History</h2>
-                            <div class="h-px flex-1 bg-pink-100"></div>
-                        </div>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            @foreach($completedInspections as $report)
-                            <div class="bg-white rounded-[2.5rem] p-6 shadow-sm border border-white flex flex-col gap-4">
-                                <div class="flex justify-between items-start">
-                                    <div>
-                                        <p class="text-[8px] font-black text-gray-400 uppercase tracking-tighter">ID: {{ $report->inspectionid }}</p>
-                                        <h3 class="text-lg font-black text-gray-900 tracking-tight">{{ $report->street }}</h3>
-                                    </div>
-                                    <span class="px-3 py-1 bg-emerald-50 text-emerald-600 rounded-lg text-[9px] font-black uppercase border border-emerald-100">Finalized</span>
-                                </div>
-                                <div class="bg-gray-50 p-4 rounded-2xl border border-gray-100 italic text-xs text-gray-600 leading-relaxed">
-                                    "{{ $report->comment }}"
-                                </div>
-                                <div class="text-right">
-                                    <span class="text-[8px] font-black text-gray-400 uppercase tracking-widest">Report Date: {{ \Carbon\Carbon::parse($report->updated_at)->format('M d, Y') }}</span>
-                                </div>
-                            </div>
-                            @endforeach
-                        </div>
-                    </div>
-                    @endif
-
                 {{-- Viewings/Renters --}}
                 <div class="p-6 bg-white rounded-[2rem] shadow-sm border border-white group">
                     <div class="flex items-center">
