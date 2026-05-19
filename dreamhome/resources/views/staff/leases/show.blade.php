@@ -13,12 +13,12 @@
 
             {{-- Navigation & Title --}}
             <div class="flex items-center gap-4 mb-8">
-                <a href="{{ route('staff.leases.index') }}" class="p-2 bg-white rounded-xl shadow-sm hover:bg-rose-50 hover:text-rose-600 transition-all">
+                <a href="{{ route('staff.leases.index') }}" class="p-2 bg-white rounded-xl shadow-sm hover:bg-[#853953]/10 hover:text-[#853953] transition-all">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"/></svg>
                 </a>
                 <div>
                     <h1 class="text-2xl font-black text-slate-900 tracking-tight">Lease Baseline Breakdown</h1>
-                    <p class="text-xs font-bold text-rose-500 uppercase tracking-widest italic">Management View • {{ $lease->leaseno }}</p>
+                    <p class="text-xs font-bold text-[#853953] uppercase tracking-widest italic">Management View • {{ $lease->leaseno }}</p>
                 </div>
             </div>
 
@@ -29,7 +29,7 @@
                     
                     {{-- Renter & Property Summary Card --}}
                     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 overflow-hidden">
-                        <div class="bg-slate-900 p-6 text-white relative">
+                        <div class="bg-[#853953] p-6 text-white relative">
                             <div class="absolute top-0 right-0 p-4 opacity-10">
                                 <svg class="w-20 h-20 text-white" fill="currentColor" viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path></svg>
                             </div>
@@ -39,7 +39,7 @@
                         </div>
                         <div class="p-6 space-y-4">
                             <div class="flex items-start gap-3">
-                                <div class="p-2 bg-rose-50 rounded-lg text-rose-500">
+                                <div class="p-2 bg-[#853953]/10 rounded-lg text-[#853953]">
                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
                                 </div>
                                 <div>
@@ -51,11 +51,11 @@
                             <div class="pt-4 border-t border-slate-50 grid grid-cols-2 gap-4">
                                 <div>
                                     <p class="text-[10px] font-black text-slate-400 uppercase">Monthly Rent</p>
-                                    <p class="text-sm font-black text-emerald-600">₱{{ number_format($lease->monthly_rent, 2) }}</p>
+                                    <p class="text-sm font-black text-slate-900">₱{{ number_format($lease->monthly_rent, 2) }}</p>
                                 </div>
                                 <div>
                                     <p class="text-[10px] font-black text-slate-400 uppercase">Security Deposit</p>
-                                    <p class="text-sm font-black text-rose-500">₱{{ number_format($lease->deposit, 2) }}</p>
+                                    <p class="text-sm font-black text-[#853953]">₱{{ number_format($lease->deposit, 2) }}</p>
                                 </div>
                             </div>
                         </div>
@@ -64,7 +64,7 @@
                     {{-- Financial Health Card --}}
                     <div class="bg-white rounded-3xl shadow-sm border border-slate-100 p-6">
                         <div class="flex items-center gap-2 mb-4">
-                            <div class="w-2 h-2 rounded-full bg-rose-500"></div>
+                            <div class="w-2 h-2 rounded-full bg-[#853953]"></div>
                             <h3 class="text-sm font-black text-slate-900 uppercase tracking-tight">Financial Status</h3>
                         </div>
                         
@@ -72,7 +72,7 @@
                             <div>
                                 <div class="flex justify-between text-[10px] font-black uppercase mb-2">
                                     <span class="text-slate-400">Total Coverage</span>
-                                    <span class="text-rose-500">
+                                    <span class="text-[#853953]">
                                         @if($lease->monthly_rent * $lease->duration > 0)
                                             {{ round(($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100) }}%
                                         @else
@@ -81,7 +81,7 @@
                                     </span>
                                 </div>
                                 <div class="h-3 bg-slate-100 rounded-full overflow-hidden">
-                                    <div class="h-full bg-gradient-to-r from-rose-400 to-rose-500 rounded-full" style="width: {{ ($lease->monthly_rent * $lease->duration > 0) ? ($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100 : 0 }}%"></div>
+                                    <div class="h-full bg-[#853953] rounded-full" style="width: {{ ($lease->monthly_rent * $lease->duration > 0) ? ($lease->total_paid / ($lease->monthly_rent * $lease->duration)) * 100 : 0 }}%"></div>
                                 </div>
                             </div>
 
@@ -90,9 +90,9 @@
                                     <p class="text-[9px] font-black text-slate-400 uppercase">Total Paid</p>
                                     <p class="text-sm font-black text-slate-900">₱{{ number_format($lease->total_paid, 2) }}</p>
                                 </div>
-                                <div class="bg-rose-50 p-3 rounded-2xl border border-rose-100">
-                                    <p class="text-[9px] font-black text-rose-400 uppercase">Remaining</p>
-                                    <p class="text-sm font-black text-rose-600">₱{{ number_format($lease->balance, 2) }}</p>
+                                <div class="bg-[#853953]/5 p-3 rounded-2xl border border-[#853953]/10">
+                                    <p class="text-[9px] font-black text-[#853953]/60 uppercase">Remaining</p>
+                                    <p class="text-sm font-black text-[#853953]">₱{{ number_format($lease->balance, 2) }}</p>
                                 </div>
                             </div>
                         </div>
@@ -110,20 +110,19 @@
                                     <p class="text-xs font-bold text-slate-500 uppercase tracking-tighter">Month-by-Month Verification</p>
                                 </div>
                                 <button @click="showPaymentModal = true" 
-                                        class="w-full sm:w-auto px-6 py-3 bg-rose-500 text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-rose-600 transition-all shadow-lg shadow-rose-200 active:scale-95">
+                                        class="w-full sm:w-auto px-6 py-3 bg-[#853953] text-white text-[10px] font-black uppercase tracking-widest rounded-xl hover:bg-[#6e2e44] transition-all shadow-lg shadow-[#853953]/20 active:scale-95">
                                     Record Manual Payment
                                 </button>
                             </div>
 
                             <div class="divide-y divide-slate-50">
                                 @foreach($schedule as $index => $item)
-                                {{-- Connected dynamic index matching variables via Alpine x-show visibility filters --}}
                                 <div class="p-6 flex items-center justify-between hover:bg-slate-50/50 transition-all"
                                      x-show="{{ $index }} >= (currentPage - 1) * itemsPerPage && {{ $index }} < currentPage * itemsPerPage"
                                      x-transition:enter="transition ease-out duration-200"
                                      x-transition:enter-start="opacity-0 transform translate-y-1">
                                     <div class="flex items-center gap-4">
-                                        <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center {{ $item['is_paid'] ? 'bg-emerald-100 text-emerald-600' : 'bg-rose-50 text-rose-400' }}">
+                                        <div class="w-12 h-12 rounded-2xl flex flex-col items-center justify-center {{ $item['is_paid'] ? 'bg-emerald-50 text-emerald-600' : 'bg-[#853953]/5 text-[#853953]/40' }}">
                                             <span class="text-[10px] font-black uppercase leading-none">{{ substr($item['month'], 0, 3) }}</span>
                                             <span class="text-xs font-black">{{ substr($item['month'], -2) }}</span>
                                         </div>
@@ -141,7 +140,7 @@
                                                     <p class="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
                                                         {{ $item['payment']->payment_method }}
                                                         @if(stripos($item['payment']->notes, 'Advance') !== false)
-                                                            <span class="text-[9px] text-amber-600 font-black block">(Advance Package)</span>
+                                                            <span class="text-[9px] text-[#853953] font-black block">(Advance Package)</span>
                                                         @endif
                                                     </p>
                                                 @else
@@ -154,9 +153,9 @@
                                             </div>
                                         @else
                                             <div class="text-right hidden sm:block">
-                                                <p class="text-sm font-black text-rose-400 italic">Unpaid</p>
+                                                <p class="text-sm font-black text-[#853953]/40 italic">Unpaid</p>
                                             </div>
-                                            <div class="w-10 h-10 rounded-full bg-white border-2 border-dashed border-rose-200 flex items-center justify-center text-rose-200">
+                                            <div class="w-10 h-10 rounded-full bg-white border-2 border-dashed border-[#853953]/20 flex items-center justify-center text-[#853953]/20">
                                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
                                             </div>
                                         @endif
@@ -206,7 +205,7 @@
                                             Prev
                                         </button>
                                         
-                                        <span class="relative inline-flex items-center px-4 py-2 border border-slate-200 bg-rose-500 text-xs font-black text-white rounded-lg" x-text="currentPage"></span>
+                                        <span class="relative inline-flex items-center px-4 py-2 border border-[#853953] bg-[#853953] text-xs font-black text-white rounded-lg" x-text="currentPage"></span>
 
                                         <button @click="if(currentPage * itemsPerPage < totalItems) currentPage++"
                                                 :disabled="currentPage * itemsPerPage >= totalItems"
@@ -237,14 +236,14 @@
              class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[100] flex items-center justify-center px-4">
             
             <div @click.away="showPaymentModal = false" 
-                 class="bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden transition-all border border-rose-100">
+                 class="bg-white rounded-[40px] shadow-2xl w-full max-w-lg overflow-hidden transition-all border border-[#853953]/10">
                 
-                <div class="bg-rose-500 p-8 text-white relative">
+                <div class="bg-[#853953] p-8 text-white relative">
                     <button @click="showPaymentModal = false" class="absolute top-6 right-6 p-2 bg-white/20 rounded-full hover:bg-white/40 transition-all">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"/></svg>
                     </button>
                     <h3 class="text-2xl font-black tracking-tight">Manual Payment Record</h3>
-                    <p class="text-rose-100 text-xs font-bold uppercase tracking-widest mt-1">DreamHome Ledger Update</p>
+                    <p class="text-[#853953]/20 text-xs font-bold uppercase tracking-widest mt-1">DreamHome Ledger Update</p>
                 </div>
 
                 <form action="{{ route('staff.leases.process_payment') }}" method="POST" class="p-8 space-y-6">
@@ -257,7 +256,7 @@
                         <div class="relative">
                             <span class="absolute left-5 top-1/2 -translate-y-1/2 font-black text-slate-300">₱</span>
                             <input type="number" name="amount" step="0.01" value="{{ $lease->monthly_rent }}" required
-                                class="w-full pl-10 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-xl font-black text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all">
+                                class="w-full pl-10 pr-5 py-4 bg-slate-50 border-none rounded-2xl text-xl font-black text-slate-900 focus:ring-2 focus:ring-[#853953] transition-all">
                         </div>
                     </div>
 
@@ -265,7 +264,7 @@
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Method</label>
                             <select name="payment_method" required
-                                    class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all">
+                                    class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#853953] transition-all">
                                 <option value="Cash">Cash</option>
                                 <option value="Check">Check</option>
                                 <option value="Bank Transfer">Bank Transfer</option>
@@ -274,14 +273,14 @@
                         <div>
                             <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Date</label>
                             <input type="date" name="payment_date" value="{{ date('Y-m-d') }}" required
-                                class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all">
+                                class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-bold text-slate-900 focus:ring-2 focus:ring-[#853953] transition-all">
                         </div>
                     </div>
 
                     <div>
                         <label class="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Reference Notes</label>
                         <textarea name="notes" rows="2" placeholder="e.g. Advance payment packages for 3 month(s)"
-                                class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-medium text-slate-900 focus:ring-2 focus:ring-rose-500 transition-all"></textarea>
+                                class="w-full px-5 py-4 bg-slate-50 border-none rounded-2xl text-sm font-medium text-slate-900 focus:ring-2 focus:ring-[#853953] transition-all"></textarea>
                     </div>
 
                     <div class="flex gap-3 pt-2">

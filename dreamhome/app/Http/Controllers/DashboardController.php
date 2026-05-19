@@ -24,19 +24,49 @@ class DashboardController extends Controller
      * Shared logic to fetch dashboard data.
      * Regular staff see only their assignments; Managers see system-wide totals.
      */
+/**
+     * Shared logic to fetch dashboard data.
+     * Regular staff see only their assignments; Managers see system-wide totals.
+     */
     private function getDashboardData($staff)
     {
         $isRegular = $staff && strtolower($staff->position) === 'regular';
+        $currentMonthStart = now()->startOfMonth();
+        $currentMonthEnd = now()->endOfMonth();
 
         if ($isRegular) {
+            // Calculate Total Revenue from payments linked to this staff member's leases
+            $myRevenue = DB::table('payment as pay')
+                ->join('lease_agreement as l', 'pay.leaseno', '=', 'l.leaseno')
+                ->where('l.staffno', $staff->staffno)
+                ->sum('pay.amount_paid');
+
+            // Count leases managed by this staff that HAVE NOT paid this month
+            $unpaidCount = DB::table('lease_agreement as l')
+                ->where('l.staffno', $staff->staffno)
+                ->whereNotExists(function ($query) use ($currentMonthStart, $currentMonthEnd) {
+                    $query->select(DB::raw(1))
+                        ->from('payment as pay')
+                        ->whereRaw('pay.leaseno = l.leaseno')
+                        ->whereBetween('pay.payment_date', [$currentMonthStart, $currentMonthEnd]);
+                })
+                ->count();
+
             return [
                 'isRegular'         => true,
                 'totalProperties'   => DB::table('property')->where('staffno', $staff->staffno)->count(),
                 'totalViewings'     => DB::table('viewing')->where('staffno', $staff->staffno)->count(),
                 'totalLeases'       => DB::table('lease_agreement')->where('staffno', $staff->staffno)->count(),
-                'pendingInspections'=> DB::table('property_inspection')->where('staffno', $staff->staffno)->count(),
+                'totalRevenue'      => $myRevenue,
+                'unpaidLeases'      => $unpaidCount,
+                'pendingInspections'=> DB::table('property_inspection')
+                                    ->where('staffno', $staff->staffno)
+                                    ->where(function($query) {
+                                        $query->where('status', '!=', 'Completed')
+                                              ->orWhereNull('status');
+                                    })
+                                    ->count(),
                 
-                // Detailed data for regular staff cards
                 'assignedProperties'=> DB::table('property')
                                         ->where('staffno', $staff->staffno)
                                         ->select('propertyno', 'street', 'area', 'city', 'property_type', 'monthly_rate', 'main_image')
@@ -46,15 +76,20 @@ class DashboardController extends Controller
                                         ->join('property as p', 'v.propertyno', '=', 'p.propertyno')
                                         ->join('renter as r', 'v.renterno', '=', 'r.renterno')
                                         ->where('v.staffno', $staff->staffno)
-                                        ->where('v.status', '!=', 'Completed') // Auto-hides completed tasks
+                                        ->where('v.status', '!=', 'Completed')
                                         ->select('v.*', 'p.street', 'p.city', 'r.firstname as r_fname', 'r.lastname as r_lname')
                                         ->orderBy('v.view_date', 'asc')->get(),
 
                 'assignedInspections'=> DB::table('property_inspection as i')
-                                        ->join('property as p', 'i.propertyno', '=', 'p.propertyno')
-                                        ->where('i.staffno', $staff->staffno)
-                                        ->select('i.*', 'p.street', 'p.city')
-                                        ->orderBy('i.inspection_date', 'asc')->get(),
+                                    ->join('property as p', 'i.propertyno', '=', 'p.propertyno')
+                                    ->where('i.staffno', $staff->staffno)
+                                    ->where(function($query) {
+                                        $query->where('i.status', '!=', 'Completed')
+                                              ->orWhereNull('i.status');
+                                    })
+                                    ->select('i.*', 'p.street', 'p.city')
+                                    ->orderBy('i.inspection_date', 'asc')
+                                    ->get(),
 
                 'assignedLeases'    => DB::table('lease_agreement as l')
                                         ->join('property as p', 'l.propertyno', '=', 'p.propertyno')
@@ -71,20 +106,31 @@ class DashboardController extends Controller
             ];
         }
 
-        // MANAGER VIEW DATA (Full Overview)
+        // MANAGER VIEW DATA (Global Totals)
+        $totalRevenue = DB::table('payment')->sum('amount_paid');
+        
+        // Global count of leases with no payment record for this month
+        $systemUnpaid = DB::table('lease_agreement as l')
+            ->whereNotExists(function ($query) use ($currentMonthStart, $currentMonthEnd) {
+                $query->select(DB::raw(1))
+                    ->from('payment as pay')
+                    ->whereRaw('pay.leaseno = l.leaseno')
+                    ->whereBetween('pay.payment_date', [$currentMonthStart, $currentMonthEnd]);
+            })
+            ->count();
+
         return [
             'isRegular'         => false,
             'totalProperties'   => Properties::count(),
             'totalRenters'      => DB::table('renter')->count(),
-            'totalRevenue'      => DB::table('property')->sum('monthly_rate'),
-            'pendingActions'    => DB::table('lease_agreement')->where('isdepositpaid', 'No')->count(),
+            'totalRevenue'      => $totalRevenue,
+            'unpaidLeases'      => $systemUnpaid,
             'inventoryMix'      => Properties::select('property_type', DB::raw('count(*) as total'))
                                     ->groupBy('property_type')->get(),
             'chartLabel'        => "System Revenue",
             'chartData'         => [4500, 5200, 4800, 5900, 6100, 5800, 6500]
         ];
     }
-
     /**
      * Mark a viewing as completed with staff feedback.
      */
@@ -104,6 +150,24 @@ class DashboardController extends Controller
 
         return back()->with('success', 'Viewing feedback recorded and task finalized.');
     }
+
+    public function completeInspection(Request $request, $id)
+{
+    // Validate the incoming comment
+    $request->validate([
+        'comment' => 'required|string|max:1000',
+    ]);
+
+    // Update the database using the ID passed from the route
+    DB::table('property_inspection')
+        ->where('inspectionid', $id)
+        ->update([
+            'evaluation' => $request->comment,
+            'status'     => 'Completed' // This allows the dashboard to sync and hide the task
+        ]);
+
+    return back()->with('success', 'Inspection report finalized and archived successfully.');
+}
 
     /**
      * Generate a detailed multi-section PDF report.

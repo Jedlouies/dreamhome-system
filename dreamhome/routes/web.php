@@ -48,6 +48,7 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/leases',              [LeasesController::class, 'index'])->name('staff.leases.index');
     // Properties — Issue 2 fix: PropertiesController now imported
     Route::get('/staff/properties',           [PropertiesController::class, 'index'])->name('staff.properties.properties');
+    
     Route::get('/staff/properties/create',    [PropertiesController::class, 'create'])->name('staff.properties.create');
     Route::post('/staff/properties/store',    [PropertiesController::class, 'store'])->name('staff.properties.store');
     Route::get('/staff/properties/{id}',      [PropertiesController::class, 'showProperty'])->name('staff.properties.show');
@@ -96,6 +97,9 @@ Route::middleware('auth:staff')->group(function () {
     Route::get('/staff/profile',    [StaffProfileController::class, 'edit'])->name('staff.profile.edit');
     Route::patch('/staff/profile',  [StaffProfileController::class, 'update'])->name('staff.profile.update');
     Route::post('/staff/logout',    [StaffLoginController::class, 'logout'])->name('staff.logout');
+
+    Route::patch('/inspections/{id}/complete', [DashboardController::class, 'completeInspection'])
+    ->name('staff.inspections.complete');
 });
 
 // ===== CLIENT AUTH ROUTES =====
